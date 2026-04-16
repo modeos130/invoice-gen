@@ -11,7 +11,7 @@ export default function Home() {
             <span className="text-lg font-bold" style={{color: 'var(--text)'}}>I Hate Invoices</span>
             <span className="text-xs px-2 py-0.5 rounded-full ml-1" style={{background: 'rgba(37,99,235,0.15)', color: 'var(--accent2)', border: '1px solid rgba(37,99,235,0.3)'}}>by Booman Systems</span>
           </div>
-          <Link href="/dashboard" className="text-sm font-semibold px-4 py-2 rounded-lg" style={{background: 'var(--accent)', color: '#fff'}}>Get Started Free</Link>
+          <Link href="/signup" className="text-sm font-semibold px-4 py-2 rounded-lg" style={{background: 'var(--accent)', color: '#fff'}}>Get Started Free</Link>
         </div>
       </header>
 
@@ -20,13 +20,13 @@ export default function Home() {
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
           Professional invoicing — free to start
         </div>
-        <h1 className="text-5xl md:text-6xl font-extrabold mb-6 leading-tight" style={{color: 'var(--text)'}}>
+        <h1 className="text-3xl sm:text-4xl md:text-6xl font-extrabold mb-6 leading-tight" style={{color: 'var(--text)'}}>
           I Hate Invoices<br /><span style={{color: 'var(--accent)'}}>So We Fixed It</span>
         </h1>
         <p className="text-xl mb-10 max-w-2xl mx-auto" style={{color: 'var(--text2)'}}>
           We get it. Here's the fix. Create, download, and send invoices without the headache.
         </p>
-        <Link href="/dashboard" className="inline-flex items-center gap-2 px-8 py-3 rounded-lg font-semibold text-white" style={{background: 'var(--accent)'}}>
+        <Link href="/signup" className="inline-flex items-center gap-2 px-8 py-3 rounded-lg font-semibold text-white" style={{background: 'var(--accent)'}}>
           <Zap className="w-4 h-4" /> Create Your First Invoice
         </Link>
       </section>
@@ -68,7 +68,7 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <Link href="/dashboard" className="block text-center py-2.5 rounded-lg font-semibold text-sm" style={{
+              <Link href="/signup" className="block text-center py-2.5 rounded-lg font-semibold text-sm" style={{
                 background: plan.highlight ? 'var(--accent)' : 'transparent',
                 color: plan.highlight ? '#fff' : 'var(--text2)',
                 border: plan.highlight ? 'none' : '1px solid var(--border)',

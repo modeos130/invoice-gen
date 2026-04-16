@@ -28,6 +28,8 @@ export default function SignupPage() {
 
     setLoading(true);
 
+    if (password.length < 8) { setError("Password must be at least 8 characters"); setLoading(false); return; }
+    if (!/[0-9]/.test(password)) { setError("Password must contain at least one number"); setLoading(false); return; }
     const { error: authError } = await supabase.auth.signUp({
       email,
       password,

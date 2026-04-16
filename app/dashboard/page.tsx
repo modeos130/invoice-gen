@@ -16,8 +16,17 @@ const statusConfig: Record<InvoiceStatus, { label: string; bg: string; text: str
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [showToast, setShowToast] = useState(false)
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.search.includes("created=true")) {
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      window.history.replaceState({}, "", "/dashboard");
+    }
+  }, []);
 
   useEffect(() => {
     async function fetchInvoices() {
