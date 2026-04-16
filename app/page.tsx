@@ -8,7 +8,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileText className="w-6 h-6" style={{color: 'var(--accent)'}} />
-            <span className="text-lg font-bold" style={{color: 'var(--text)'}}>Invoice-gen</span>
+            <span className="text-lg font-bold" style={{color: 'var(--text)'}}>I Hate Invoices</span>
             <span className="text-xs px-2 py-0.5 rounded-full ml-1" style={{background: 'rgba(37,99,235,0.15)', color: 'var(--accent2)', border: '1px solid rgba(37,99,235,0.3)'}}>by Booman Systems</span>
           </div>
           <Link href="/dashboard" className="text-sm font-semibold px-4 py-2 rounded-lg" style={{background: 'var(--accent)', color: '#fff'}}>Get Started Free</Link>
@@ -21,10 +21,10 @@ export default function Home() {
           Professional invoicing — free to start
         </div>
         <h1 className="text-5xl md:text-6xl font-extrabold mb-6 leading-tight" style={{color: 'var(--text)'}}>
-          Professional invoices<br /><span style={{color: 'var(--accent)'}}>in 60 seconds</span>
+          I Hate Invoices<br /><span style={{color: 'var(--accent)'}}>So We Fixed It</span>
         </h1>
         <p className="text-xl mb-10 max-w-2xl mx-auto" style={{color: 'var(--text2)'}}>
-          Create, download, and send professional PDF invoices. Built for freelancers, producers, and small businesses.
+          We get it. Here's the fix. Create, download, and send invoices without the headache.
         </p>
         <Link href="/dashboard" className="inline-flex items-center gap-2 px-8 py-3 rounded-lg font-semibold text-white" style={{background: 'var(--accent)'}}>
           <Zap className="w-4 h-4" /> Create Your First Invoice
@@ -80,7 +80,7 @@ export default function Home() {
 
       <footer className="border-t py-8 text-center" style={{borderColor: 'var(--border)'}}>
         <p className="text-sm" style={{color: 'var(--text3)'}}>2026 Booman Systems LLC — Built by DJ Booman</p>
-        <p className="text-xs mt-1" style={{color: 'var(--text3)'}}>Part of the Booman Suite: FastPDF + Invoice-gen</p>
+        <p className="text-xs mt-1" style={{color: 'var(--text3)'}}>Part of the Booman Suite — ihateinvoices.com</p>
       </footer>
     </div>
   )

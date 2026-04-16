@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Invoice-gen — Professional Invoicing',
-  description: 'Create professional PDF invoices in 60 seconds. Built for freelancers, producers, and small businesses.',
+  title: 'I Hate Invoices',
+  description: 'We get it. Here is the fix.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

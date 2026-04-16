@@ -99,7 +99,7 @@ export function PDFTemplate({ invoice }: { invoice: Invoice }) {
           </View>
         ) : null}
 
-        <Text style={styles.footer}>Thank you for your business — Booman Systems LLC</Text>
+        <Text style={styles.footer}>Thank you for your business — Powered by I Hate Invoices</Text>
       </Page>
     </Document>
   )

@@ -45,7 +45,7 @@ export default function LoginPage() {
             className="text-3xl font-bold tracking-tight"
             style={{ color: '#2563eb' }}
           >
-            Invoice-gen
+            I Hate Invoices
           </h1>
           <p className="mt-2 text-sm" style={{ color: '#9ca3af' }}>
             Sign in to your account
