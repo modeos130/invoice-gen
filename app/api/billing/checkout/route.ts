@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBaseUrl } from '@/lib/server-env';
+import { rateLimitRequest, rejectCrossOriginPost } from '@/lib/request-security';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase-server';
 import { getProPriceId, getStripe } from '@/lib/stripe';
 import { isProEntitled } from '@/lib/billing';
 import type { BillingProfile } from '@/lib/billing';
 
 export async function POST(request: NextRequest) {
+  const originError = rejectCrossOriginPost(request);
+  if (originError) return originError;
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -15,6 +19,12 @@ export async function POST(request: NextRequest) {
   if (userError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const rateLimitError = rateLimitRequest(`billing:checkout:${user.id}`, {
+    limit: 6,
+    windowMs: 60_000,
+  });
+  if (rateLimitError) return rateLimitError;
 
   const admin = createSupabaseAdminClient();
   const { data: profile, error: profileError } = await admin

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { currentMonthStartIso, FREE_INVOICE_LIMIT, isProEntitled } from '@/lib/billing';
+import { rateLimitRequest, rejectCrossOriginPost } from '@/lib/request-security';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import type { BillingProfile } from '@/lib/billing';
 import type { LineItem } from '@/types/invoice';
@@ -47,6 +48,9 @@ function isDateInput(value: unknown): value is string {
 }
 
 export async function POST(request: NextRequest) {
+  const originError = rejectCrossOriginPost(request);
+  if (originError) return originError;
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -56,6 +60,12 @@ export async function POST(request: NextRequest) {
   if (userError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const rateLimitError = rateLimitRequest(`invoice:create:${user.id}`, {
+    limit: 12,
+    windowMs: 60_000,
+  });
+  if (rateLimitError) return rateLimitError;
 
   let payload: InvoicePayload;
 
