@@ -227,6 +227,7 @@ npm run lint
 npm run typecheck
 npm run build
 npm run verify
+npm run smoke
 npm audit --audit-level=low
 npm ls --depth=0
 rg -n "TODO|FIXME|console\\.log|debugger|service_role|sk_|pk_|DJ Booman|Wyoming|InvoiceGen|opinionated" -g '!node_modules' -g '!.next'

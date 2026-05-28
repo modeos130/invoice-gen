@@ -19,6 +19,9 @@ export default function TermsPage() {
         <p>
           You are responsible for keeping your login credentials secure and for the invoice, client, and business information you enter into the service.
         </p>
+        <p>
+          The service is intended for users who can lawfully operate a business account and is not intended for children.
+        </p>
       </LegalSection>
 
       <LegalSection title="Billing">
@@ -27,6 +30,9 @@ export default function TermsPage() {
         </p>
         <p>
           Paid subscriptions renew automatically until canceled. You can cancel through the billing portal when it is available, and cancellation keeps access active through the end of the paid billing period.
+        </p>
+        <p>
+          Taxes, if any, may be calculated or collected by the payment processor depending on configuration and applicable law. You remain responsible for your own business, tax, accounting, and invoice compliance obligations.
         </p>
       </LegalSection>
 

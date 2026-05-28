@@ -270,7 +270,7 @@ export default function DashboardPage() {
           </div>
         ) : invoices.length === 0 ? (
           <div
-            className="flex flex-col items-center justify-center rounded-xl py-20"
+            className="flex flex-col items-center justify-center rounded-xl px-6 py-16 text-center"
             style={{
               backgroundColor: '#111827',
               border: '1px solid #374151',
@@ -295,6 +295,22 @@ export default function DashboardPage() {
             <p className="mb-6 text-sm" style={{ color: '#9ca3af' }}>
               Create your first invoice to get started.
             </p>
+            <div className="mb-6 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-2">
+              {[
+                'Add or select a client',
+                'Save an invoice record',
+                'Download the saved PDF',
+                'Update payment status',
+              ].map((step) => (
+                <div
+                  key={step}
+                  className="rounded-lg px-4 py-3 text-sm"
+                  style={{ border: '1px solid #374151', color: '#d1d5db' }}
+                >
+                  {step}
+                </div>
+              ))}
+            </div>
             <Link
               href="/invoice/new"
               className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"

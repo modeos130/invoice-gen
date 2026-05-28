@@ -44,6 +44,7 @@ There is no unit, integration, API, E2E, accessibility, or visual regression tes
 npm run lint
 npm run typecheck
 npm run build
+npm run smoke
 npm audit --audit-level=low
 ```
 

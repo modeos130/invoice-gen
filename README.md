@@ -43,6 +43,7 @@ Preview/development can use Stripe test-mode keys. Production must use live Stri
 npm run lint
 npm run typecheck
 npm run build
+npm run smoke
 npm audit --audit-level=low
 ```
 
