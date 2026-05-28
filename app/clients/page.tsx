@@ -185,6 +185,7 @@ export default function ClientsPage() {
 
             {error && (
               <div
+                role="alert"
                 className="mb-4 rounded-lg px-4 py-3 text-sm"
                 style={{
                   backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -200,12 +201,14 @@ export default function ClientsPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label
+                    htmlFor="client-name"
                     className="block text-xs font-medium mb-1"
                     style={{ color: '#9ca3af' }}
                   >
                     Name *
                   </label>
                   <input
+                    id="client-name"
                     type="text"
                     required
                     value={name}
@@ -217,12 +220,14 @@ export default function ClientsPage() {
                 </div>
                 <div>
                   <label
+                    htmlFor="client-email"
                     className="block text-xs font-medium mb-1"
                     style={{ color: '#9ca3af' }}
                   >
                     Email
                   </label>
                   <input
+                    id="client-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -233,12 +238,14 @@ export default function ClientsPage() {
                 </div>
                 <div>
                   <label
+                    htmlFor="client-phone"
                     className="block text-xs font-medium mb-1"
                     style={{ color: '#9ca3af' }}
                   >
                     Phone
                   </label>
                   <input
+                    id="client-phone"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -249,12 +256,14 @@ export default function ClientsPage() {
                 </div>
                 <div>
                   <label
+                    htmlFor="client-address"
                     className="block text-xs font-medium mb-1"
                     style={{ color: '#9ca3af' }}
                   >
                     Address
                   </label>
                   <input
+                    id="client-address"
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
@@ -280,7 +289,7 @@ export default function ClientsPage() {
 
         {/* Client List */}
         {loading ? (
-          <div className="flex items-center justify-center py-20">
+          <div className="flex items-center justify-center py-20" role="status" aria-label="Loading clients">
             <div
               className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"
               style={{ borderColor: '#2563eb', borderTopColor: 'transparent' }}
@@ -338,6 +347,7 @@ export default function ClientsPage() {
                   {['Name', 'Email', 'Phone', 'Invoices'].map((h) => (
                     <th
                       key={h}
+                      scope="col"
                       className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                       style={{ color: '#9ca3af' }}
                     >

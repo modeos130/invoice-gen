@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { AuthShell } from '@/components/AuthShell';
+import { getAuthErrorMessage, withAuthTimeout } from '@/lib/auth-timeout';
 import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
@@ -17,61 +19,55 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error: authError } = await withAuthTimeout(
+        supabase.auth.signInWithPassword({
+          email,
+          password,
+        }),
+        'Sign in timed out. Check your connection and try again.',
+      );
 
-    if (authError) {
-      setError(authError.message);
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
+
+      const redirect = new URLSearchParams(window.location.search).get('redirect');
+      const destination = redirect && redirect.startsWith('/') && !redirect.startsWith('//')
+        ? redirect
+        : '/dashboard';
+
+      router.replace(destination);
+    } catch (authError) {
+      setError(getAuthErrorMessage(authError, 'Sign in failed. Please try again.'));
+    } finally {
       setLoading(false);
-      return;
     }
-
-    router.push('/dashboard');
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4"
-      style={{ backgroundColor: '#0a0f1e' }}
+    <AuthShell
+      title="Sign in"
+      description="Open your invoice workspace."
+      footer={(
+        <p>
+          Don&apos;t have an account?{' '}
+          <Link href="/signup" className="auth-link">
+            Sign up
+          </Link>
+        </p>
+      )}
     >
-      <div
-        className="w-full max-w-md rounded-xl p-8 shadow-2xl"
-        style={{ backgroundColor: '#111827', border: '1px solid #374151' }}
-      >
-        <div className="mb-8 text-center">
-          <h1
-            className="text-3xl font-bold tracking-tight"
-            style={{ color: '#2563eb' }}
-          >
-            I Hate Invoices
-          </h1>
-          <p className="mt-2 text-sm" style={{ color: '#9ca3af' }}>
-            Sign in to your account
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="auth-form">
           {error && (
-            <div
-              className="rounded-lg px-4 py-3 text-sm"
-              style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                color: '#fca5a5',
-              }}
-            >
+            <div className="auth-alert auth-alert-error" role="alert">
               {error}
             </div>
           )}
 
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium mb-1.5"
-              style={{ color: '#f9fafb' }}
-            >
+          <div className="auth-field">
+            <label htmlFor="email">
               Email
             </label>
             <input
@@ -80,36 +76,30 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg px-4 py-2.5 text-sm outline-none transition-colors focus:ring-2"
-              style={{
-                backgroundColor: '#0a0f1e',
-                border: '1px solid #374151',
-                color: '#f9fafb',
-              }}
+              className="auth-input"
               placeholder="you@example.com"
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium mb-1.5"
-              style={{ color: '#f9fafb' }}
-            >
-              Password
-            </label>
+          <div className="auth-field">
+            <div className="auth-label-row">
+              <label htmlFor="password">
+                Password
+              </label>
+              <Link
+                href="/forgot-password"
+                className="auth-link"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <input
               id="password"
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg px-4 py-2.5 text-sm outline-none transition-colors focus:ring-2"
-              style={{
-                backgroundColor: '#0a0f1e',
-                border: '1px solid #374151',
-                color: '#f9fafb',
-              }}
+              className="auth-input"
               placeholder="Enter your password"
             />
           </div>
@@ -117,27 +107,11 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: '#2563eb', color: '#f9fafb' }}
+            className="auth-primary"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-
-        <p
-          className="mt-6 text-center text-sm"
-          style={{ color: '#9ca3af' }}
-        >
-          Don&apos;t have an account?{' '}
-          <Link
-            href="/signup"
-            className="font-medium hover:underline"
-            style={{ color: '#2563eb' }}
-          >
-            Sign up
-          </Link>
-        </p>
-      </div>
-    </div>
+    </AuthShell>
   );
 }

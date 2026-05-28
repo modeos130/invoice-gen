@@ -9,27 +9,28 @@ CREATE TABLE IF NOT EXISTS clients (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS invoices (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users NOT NULL,
-  client_id UUID REFERENCES clients(id) ON DELETE SET NULL,
-  invoice_number TEXT NOT NULL,
-  client_name TEXT NOT NULL,
-  client_email TEXT DEFAULT '',
-  client_address TEXT DEFAULT '',
-  line_items JSONB NOT NULL DEFAULT '[]',
-  subtotal DECIMAL(10,2) DEFAULT 0,
-  tax_rate DECIMAL(5,2) DEFAULT 0,
-  tax_amount DECIMAL(10,2) DEFAULT 0,
-  total DECIMAL(10,2) DEFAULT 0,
-  status TEXT DEFAULT 'draft' CHECK (status IN ('draft','sent','paid','overdue')),
-  notes TEXT DEFAULT '',
-  invoice_date DATE DEFAULT CURRENT_DATE,
-  due_date DATE DEFAULT (CURRENT_DATE + INTERVAL '30 days'),
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE (user_id, invoice_number)
-);
+ALTER TABLE invoices
+  ADD COLUMN IF NOT EXISTS client_id UUID REFERENCES clients(id) ON DELETE SET NULL;
+
+ALTER TABLE invoices
+  DROP CONSTRAINT IF EXISTS invoices_status_check;
+
+ALTER TABLE invoices
+  ADD CONSTRAINT invoices_status_check
+  CHECK (status IN ('draft','sent','paid','overdue'));
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'invoices_user_id_invoice_number_key'
+      AND conrelid = 'invoices'::regclass
+  ) THEN
+    ALTER TABLE invoices
+      ADD CONSTRAINT invoices_user_id_invoice_number_key UNIQUE (user_id, invoice_number);
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS billing_profiles (
   user_id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,

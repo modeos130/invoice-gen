@@ -1,87 +1,333 @@
-import Link from 'next/link'
-import { FileText, Download, Users, CheckCircle, Zap } from 'lucide-react'
+import Link from 'next/link';
+import {
+  ArrowRight,
+  Check,
+  CircleDollarSign,
+  Download,
+  FileText,
+  Search,
+  Send,
+  Users,
+} from 'lucide-react';
+import { companyInfo } from '@/lib/company';
+
+const workflowSteps = [
+  {
+    title: 'Create the invoice',
+    description: 'Add client details, line items, due dates, tax, and notes without fighting a document template.',
+  },
+  {
+    title: 'Export the PDF',
+    description: 'Download a clean invoice from the same saved record that powers your dashboard.',
+  },
+  {
+    title: 'Track what changed',
+    description: 'Keep drafts, sent invoices, paid work, and outstanding balances visible from one workspace.',
+  },
+];
+
+const features = [
+  {
+    icon: FileText,
+    title: 'Invoice builder',
+    description: 'Structured invoice records with line items, taxes, notes, and due dates.',
+  },
+  {
+    icon: Users,
+    title: 'Client records',
+    description: 'Reusable client profiles for repeat work and cleaner account history.',
+  },
+  {
+    icon: Download,
+    title: 'PDF export',
+    description: 'Download professional PDFs without duplicating the source invoice.',
+  },
+  {
+    icon: CircleDollarSign,
+    title: 'Payment tracking',
+    description: 'See paid, sent, draft, and overdue work without a spreadsheet cleanup session.',
+  },
+];
+
+const invoiceRows = [
+  ['Brand refresh', '2', '$450', '$900'],
+  ['Landing page copy', '1', '$325', '$325'],
+  ['Client call', '1', '$75', '$75'],
+];
 
 export default function Home() {
   return (
-    <div className="min-h-screen" style={{background: 'var(--bg)'}}>
-      <header className="border-b" style={{borderColor: 'var(--border)', background: 'rgba(10,15,30,0.95)'}}>
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileText className="w-6 h-6" style={{color: 'var(--accent)'}} />
-            <span className="text-lg font-bold" style={{color: 'var(--text)'}}>I Hate Invoices</span>
-            <span className="text-xs px-2 py-0.5 rounded-full ml-1" style={{background: 'rgba(37,99,235,0.15)', color: 'var(--accent2)', border: '1px solid rgba(37,99,235,0.3)'}}>by Booman Systems</span>
-          </div>
-          <Link href="/signup" className="text-sm font-semibold px-4 py-2 rounded-lg" style={{background: 'var(--accent)', color: '#fff'}}>Get Started Free</Link>
+    <div className="public-shell">
+      <header className="site-header">
+        <a className="skip-link" href="#main">
+          Skip to content
+        </a>
+        <div className="container header-inner">
+          <Link className="brand" href="/" aria-label="I Hate Invoices home">
+            <span className="brand-mark" aria-hidden="true">
+              IH
+            </span>
+            <span>
+              <strong>I Hate Invoices</strong>
+              <small>Small-business invoice workspace</small>
+            </span>
+          </Link>
+          <nav className="nav" aria-label="Main navigation">
+            <a href="#features">Features</a>
+            <a href="#workflow">Workflow</a>
+            <a href="#pricing">Pricing</a>
+            <a href={`mailto:${companyInfo.contactEmail}`}>Contact</a>
+            <Link href="/login">Sign In</Link>
+            <Link className="nav-cta" href="/signup">
+              Start Free
+            </Link>
+          </nav>
         </div>
       </header>
 
-      <section className="max-w-4xl mx-auto px-6 py-24 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-mono mb-6" style={{background: 'rgba(37,99,235,0.1)', color: 'var(--accent2)', border: '1px solid rgba(37,99,235,0.2)'}}>
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          Professional invoicing — free to start
-        </div>
-        <h1 className="text-3xl sm:text-4xl md:text-6xl font-extrabold mb-6 leading-tight" style={{color: 'var(--text)'}}>
-          I Hate Invoices<br /><span style={{color: 'var(--accent)'}}>So We Fixed It</span>
-        </h1>
-        <p className="text-xl mb-10 max-w-2xl mx-auto" style={{color: 'var(--text2)'}}>
-          We get it. Here's the fix. Create, download, and send invoices without the headache.
-        </p>
-        <Link href="/signup" className="inline-flex items-center gap-2 px-8 py-3 rounded-lg font-semibold text-white" style={{background: 'var(--accent)'}}>
-          <Zap className="w-4 h-4" /> Create Your First Invoice
-        </Link>
-      </section>
-
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { icon: Download, title: 'Instant PDF Download', desc: 'Generate pixel-perfect PDF invoices with your business info. Download and send in seconds.' },
-            { icon: Users, title: 'Client Management', desc: 'Save client details and reuse them. Build your client list as you invoice.' },
-            { icon: CheckCircle, title: 'Payment Tracking', desc: 'Mark invoices as Draft, Sent, or Paid. Always know what is outstanding.' },
-          ].map((f, i) => (
-            <div key={i} className="p-6 rounded-xl" style={{background: 'var(--bg2)', border: '1px solid var(--border)'}}>
-              <f.icon className="w-8 h-8 mb-4" style={{color: 'var(--accent)'}} />
-              <h3 className="text-lg font-bold mb-2" style={{color: 'var(--text)'}}>{f.title}</h3>
-              <p className="text-sm" style={{color: 'var(--text3)'}}>{f.desc}</p>
+      <main id="main">
+        <section className="home-hero">
+          <div className="container hero-grid">
+            <div className="hero-copy">
+              <h1>Invoices without the busywork</h1>
+              <p>
+                Create invoices, keep client records, export PDFs, and track payment status
+                from a focused workspace built for independent businesses.
+              </p>
+              <div className="button-row">
+                <Link className="button primary" href="/signup">
+                  Start Free
+                  <ArrowRight aria-hidden="true" size={18} />
+                </Link>
+                <Link className="button secondary" href="/login">
+                  Sign In
+                </Link>
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
 
-      <section className="max-w-4xl mx-auto px-6 py-16 text-center">
-        <h2 className="text-3xl font-extrabold mb-4" style={{color: 'var(--text)'}}>Simple pricing</h2>
-        <p className="mb-10" style={{color: 'var(--text3)'}}>Start free. Upgrade when you need more.</p>
-        <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-          {[
-            { name: 'Free', price: '$0', features: ['3 invoices/month', 'PDF download', 'Basic template'], highlight: false },
-            { name: 'Pro', price: '$7/mo', features: ['Unlimited invoices', 'Client management', 'Payment tracking', 'Custom notes & tax'], highlight: true },
-          ].map((plan, i) => (
-            <div key={i} className="p-6 rounded-xl text-left" style={{
-              background: plan.highlight ? 'rgba(37,99,235,0.1)' : 'var(--bg2)',
-              border: `1px solid ${plan.highlight ? 'rgba(37,99,235,0.5)' : 'var(--border)'}`,
-            }}>
-              <h3 className="font-bold text-lg mb-1" style={{color: 'var(--text)'}}>{plan.name}</h3>
-              <div className="text-3xl font-extrabold mb-4" style={{color: plan.highlight ? 'var(--accent)' : 'var(--text)'}}>{plan.price}</div>
-              <ul className="space-y-2 mb-6">
-                {plan.features.map((f, j) => (
-                  <li key={j} className="flex items-center gap-2 text-sm" style={{color: 'var(--text2)'}}>
-                    <CheckCircle className="w-4 h-4 flex-shrink-0" style={{color: 'var(--success)'}} /> {f}
-                  </li>
+            <div className="hero-visual" aria-label="Invoice dashboard preview">
+              <div className="mockup-toolbar">
+                <div>
+                  <span>Invoice #1042</span>
+                  <strong>Evergreen Studio</strong>
+                </div>
+                <button type="button">
+                  <Download aria-hidden="true" size={16} />
+                  PDF
+                </button>
+              </div>
+              <div className="mockup-summary" aria-label="Invoice summary">
+                <div>
+                  <span>Total</span>
+                  <strong>$1,300.00</strong>
+                </div>
+                <div>
+                  <span>Status</span>
+                  <strong className="status-paid">Paid</strong>
+                </div>
+                <div>
+                  <span>Due</span>
+                  <strong>Jun 14</strong>
+                </div>
+              </div>
+              <div className="mockup-table" aria-label="Invoice line items">
+                <div className="mockup-row mockup-head">
+                  <span>Item</span>
+                  <span>Qty</span>
+                  <span>Rate</span>
+                  <span>Total</span>
+                </div>
+                {invoiceRows.map(([item, qty, rate, total]) => (
+                  <div className="mockup-row" key={item}>
+                    <span>{item}</span>
+                    <span>{qty}</span>
+                    <span>{rate}</span>
+                    <span>{total}</span>
+                  </div>
                 ))}
-              </ul>
-              <Link href="/signup" className="block text-center py-2.5 rounded-lg font-semibold text-sm" style={{
-                background: plan.highlight ? 'var(--accent)' : 'transparent',
-                color: plan.highlight ? '#fff' : 'var(--text2)',
-                border: plan.highlight ? 'none' : '1px solid var(--border)',
-              }}>{plan.highlight ? 'Start Pro' : 'Start Free'}</Link>
+              </div>
+              <div className="mockup-footer">
+                <span>
+                  <Search aria-hidden="true" size={15} />
+                  Client record linked
+                </span>
+                <span>
+                  <Send aria-hidden="true" size={15} />
+                  Ready to send
+                </span>
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+          <div className="container trust-strip" aria-label="Product highlights">
+            <span>Invoice creation</span>
+            <span>Client records</span>
+            <span>PDF export</span>
+            <span>Payment tracking</span>
+            <span>Free and Pro plans</span>
+          </div>
+        </section>
 
-      <footer className="border-t py-8 text-center" style={{borderColor: 'var(--border)'}}>
-        <p className="text-sm" style={{color: 'var(--text3)'}}>2026 Booman Systems LLC — Built by DJ Booman</p>
-        <p className="text-xs mt-1" style={{color: 'var(--text3)'}}>Part of the Booman Suite — ihateinvoices.com</p>
+        <section className="section feature-strip" id="features">
+          <div className="container">
+            <div className="section-header">
+              <h2>Everything needed to send a clean invoice.</h2>
+              <p>
+                Keep the invoice, client, PDF, and payment status together so billing work
+                stays small and repeatable.
+              </p>
+            </div>
+            <div className="feature-grid">
+              {features.map((feature) => (
+                <article className="feature-card" key={feature.title}>
+                  <feature.icon aria-hidden="true" size={24} />
+                  <h3>{feature.title}</h3>
+                  <p>{feature.description}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="section workflow-section" id="workflow">
+          <div className="container workflow-grid">
+            <div className="prose-block">
+              <h2>A short path from client work to payment status.</h2>
+              <p>
+                I Hate Invoices keeps billing close to the work: create the invoice,
+                export the PDF, and keep the account view current as payment status changes.
+              </p>
+            </div>
+            <div className="workflow-list">
+              {workflowSteps.map((step, index) => (
+                <article className="workflow-step" key={step.title}>
+                  <span>{index + 1}</span>
+                  <div>
+                    <h3>{step.title}</h3>
+                    <p>{step.description}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="section product-band">
+          <div className="container product-grid">
+            <div className="mini-dashboard" aria-label="Payment tracking preview">
+              <div className="dashboard-head">
+                <strong>Payment view</strong>
+                <span>This month</span>
+              </div>
+              <div className="metric-grid">
+                <div>
+                  <span>Paid</span>
+                  <strong>$4,820</strong>
+                </div>
+                <div>
+                  <span>Outstanding</span>
+                  <strong>$1,175</strong>
+                </div>
+              </div>
+              <div className="status-list">
+                <span><Check aria-hidden="true" size={15} /> Paid invoices</span>
+                <span><Send aria-hidden="true" size={15} /> Sent invoices</span>
+                <span><FileText aria-hidden="true" size={15} /> Draft invoices</span>
+              </div>
+            </div>
+            <div>
+              <h2>Designed for the work between getting hired and getting paid.</h2>
+              <p>
+                Small teams and solo operators do not need a bloated accounting suite to
+                stay organized. The app keeps the billing surface narrow: clients,
+                invoices, PDFs, and payment status.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="section pricing-section" id="pricing">
+          <div className="container pricing-grid">
+            <div>
+              <h2>Simple pricing that matches invoice volume.</h2>
+              <p>
+                Start with the free monthly allowance. Upgrade when unlimited invoice
+                creation makes more sense.
+              </p>
+            </div>
+            <div className="pricing-cards">
+              <article>
+                <h3>Free</h3>
+                <strong>$0</strong>
+                <p>3 invoices per month, client records, PDF downloads, and dashboard tracking.</p>
+                <Link className="button secondary light" href="/signup">
+                  Start Free
+                </Link>
+              </article>
+              <article>
+                <h3>Pro</h3>
+                <strong>$7/mo</strong>
+                <p>Unlimited invoices, client management, payment tracking, notes, and tax fields.</p>
+                <Link className="button primary" href="/signup">
+                  Start Pro
+                </Link>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section className="section contact-cta">
+          <div className="container cta-inner">
+            <div>
+              <h2>Ready to make invoicing smaller?</h2>
+              <p>Create the first invoice now, or sign in to continue your workspace.</p>
+            </div>
+            <div className="cta-actions">
+              <Link className="button primary" href="/signup">
+                Start Free
+              </Link>
+              <Link className="button secondary light" href="/login">
+                Sign In
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="site-footer">
+        <div className="container footer-grid">
+          <div>
+            <Link className="footer-brand" href="/">
+              I Hate Invoices
+            </Link>
+            <p>
+              Lightweight invoice creation, client records, PDF export, and payment
+              tracking for independent businesses.
+            </p>
+          </div>
+          <div>
+            <h2>Legal</h2>
+            <ul>
+              <li><Link href="/terms">Terms</Link></li>
+              <li><Link href="/privacy">Privacy</Link></li>
+              <li><Link href="/refunds">Refunds</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h2>Ownership and Contact</h2>
+            <p>
+              Operated by {companyInfo.legalName}.
+              <br />
+              <a href={`mailto:${companyInfo.contactEmail}`}>{companyInfo.contactEmail}</a>
+              <br />
+              {companyInfo.location}
+            </p>
+          </div>
+        </div>
+        <div className="container footer-bottom">
+          <span>© 2026 {companyInfo.legalName}. All rights reserved.</span>
+          <span>Public pages provide product, support, and legal information only.</span>
+        </div>
       </footer>
     </div>
-  )
+  );
 }

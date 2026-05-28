@@ -72,7 +72,8 @@ export default function InvoiceDetailPage({ params }: PageProps) {
     const { error } = await supabase
       .from('invoices')
       .update({ status: newStatus })
-      .eq('id', invoice.id);
+      .eq('id', invoice.id)
+      .eq('user_id', invoice.user_id);
 
     if (!error) {
       setInvoice({ ...invoice, status: newStatus });
@@ -86,6 +87,8 @@ export default function InvoiceDetailPage({ params }: PageProps) {
       <div
         className="flex min-h-screen items-center justify-center"
         style={{ backgroundColor: '#0a0f1e' }}
+        role="status"
+        aria-label="Loading invoice"
       >
         <div
           className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"
@@ -125,10 +128,11 @@ export default function InvoiceDetailPage({ params }: PageProps) {
           <div className="flex items-center gap-3">
             {/* Status Dropdown */}
             <div className="flex items-center gap-2">
-              <label className="text-xs font-medium" style={{ color: '#9ca3af' }}>
+              <label htmlFor="invoice-status" className="text-xs font-medium" style={{ color: '#9ca3af' }}>
                 Status:
               </label>
               <select
+                id="invoice-status"
                 value={invoice.status}
                 onChange={(e) => handleStatusChange(e.target.value as InvoiceStatus)}
                 disabled={updatingStatus}
@@ -150,15 +154,11 @@ export default function InvoiceDetailPage({ params }: PageProps) {
               <PDFDownloadLink
                 document={<PDFTemplate invoice={invoice} />}
                 fileName={`${invoice.invoice_number}.pdf`}
+                className="rounded-lg px-4 py-2 text-sm font-medium transition-opacity hover:opacity-80"
+                style={{ color: '#f9fafb', border: '1px solid #374151' }}
               >
                 {({ loading: pdfLoading }) => (
-                  <button
-                    className="rounded-lg px-4 py-2 text-sm font-medium transition-opacity hover:opacity-80"
-                    style={{ color: '#f9fafb', border: '1px solid #374151' }}
-                    disabled={pdfLoading}
-                  >
-                    {pdfLoading ? 'Preparing...' : 'Download PDF'}
-                  </button>
+                  pdfLoading ? 'Preparing...' : 'Download PDF'
                 )}
               </PDFDownloadLink>
             )}
@@ -224,16 +224,16 @@ export default function InvoiceDetailPage({ params }: PageProps) {
           <table className="mb-8 w-full text-sm">
             <thead>
               <tr className="border-b-2 border-gray-200">
-                <th className="pb-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
+                <th scope="col" className="pb-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                   Description
                 </th>
-                <th className="pb-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">
+                <th scope="col" className="pb-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">
                   Qty
                 </th>
-                <th className="pb-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">
+                <th scope="col" className="pb-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">
                   Rate
                 </th>
-                <th className="pb-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">
+                <th scope="col" className="pb-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">
                   Amount
                 </th>
               </tr>

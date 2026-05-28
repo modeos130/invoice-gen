@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# I Hate Invoices
 
-## Getting Started
+I Hate Invoices is a lightweight invoicing SaaS for independent workers and small businesses. Users can sign up, manage client records, create invoices, export saved invoices as PDFs, track invoice status, and upgrade from a free monthly invoice limit to a Pro subscription.
 
-First, run the development server:
+The repository folder and Vercel project may still be named `invoice-gen`, but the customer-facing product is **I Hate Invoices** at `ihateinvoices.com`.
+
+## Stack
+
+- Next.js App Router 16 with React 19
+- Tailwind CSS 4 and custom CSS
+- Supabase Auth, Postgres, RLS, and SSR cookies
+- Stripe Checkout, Billing Portal, and webhooks
+- React PDF for saved invoice PDF exports
+- Vercel deployment
+
+## Setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Create `.env.local` from `.env.example`.
+
+3. Run locally:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Required Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+See `.env.example` for the complete list.
 
-## Learn More
+Preview/development can use Stripe test-mode keys. Production must use live Stripe objects only after live-money setup is approved and tested.
 
-To learn more about Next.js, take a look at the following resources:
+## Validation Commands
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run lint
+npm run typecheck
+npm run build
+npm audit --audit-level=low
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`npm run verify` runs lint, typecheck, and build together.
 
-## Deploy on Vercel
+## Production Notes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Production is not ready for paid launch until the current billing/legal API surface is deployed, live Stripe Product/Price/webhook/portal are configured, Supabase migrations are confirmed live, and authenticated QA proves signup, invoice creation, quota enforcement, checkout, webhook entitlement, billing portal, cancellation, and password reset.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Do not treat a migration file in this repo as proof that the hosted Supabase database has been changed.
+
+## Troubleshooting
+
+- Login loops usually mean Supabase browser auth is not writing SSR-compatible cookies or the Supabase redirect URL/domain allowlist is wrong.
+- Billing route `404` in production means the deployed production build does not contain the current `app/api/billing/*` routes.
+- Stripe webhook `400` without a signature is expected.
+- Missing `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_PRO_PRICE_ID`, or `STRIPE_WEBHOOK_SECRET` will break billing routes server-side.

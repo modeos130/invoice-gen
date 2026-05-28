@@ -3,19 +3,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, formatDate } from '@/lib/invoice-utils';
 import type { Client, LineItem } from '@/types/invoice';
-
-const PDFDownloadLink = dynamic(
-  () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
-  { ssr: false }
-);
-
-const PDFTemplate = dynamic(() => import('@/components/PDFTemplate').then(m => ({ default: m.PDFTemplate })), {
-  ssr: false,
-});
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -27,7 +17,6 @@ function emptyLineItem(): LineItem {
 
 export default function NewInvoicePage() {
   const router = useRouter();
-  const [userId, setUserId] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState('');
@@ -48,6 +37,8 @@ export default function NewInvoicePage() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [limitReached, setLimitReached] = useState(false);
+  const [billingBusy, setBillingBusy] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -59,8 +50,6 @@ export default function NewInvoicePage() {
         router.push('/login');
         return;
       }
-
-      setUserId(user.id);
 
       // Generate invoice number
       const { count } = await supabase
@@ -141,95 +130,65 @@ export default function NewInvoicePage() {
   const taxAmount = useMemo(() => subtotal * (taxRate / 100), [subtotal, taxRate]);
   const total = useMemo(() => subtotal + taxAmount, [subtotal, taxAmount]);
 
-  const invoiceData = useMemo(
-    () => ({
-      id: '',
-      user_id: userId,
-      invoice_number: invoiceNumber,
-      client_name: clientName,
-      client_email: clientEmail,
-      client_address: clientAddress,
-      client_id: selectedClientId,
-      line_items: lineItems,
-      subtotal,
-      tax_rate: taxRate,
-      tax_amount: taxAmount,
-      total,
-      status: 'draft' as const,
-      notes,
-      invoice_date: invoiceDate,
-      due_date: dueDate,
-      created_at: new Date().toISOString(),
-    }),
-    [
-      userId, invoiceNumber, clientName, clientEmail, clientAddress,
-      selectedClientId, lineItems, subtotal, taxRate, taxAmount, total,
-      notes, invoiceDate, dueDate,
-    ]
-  );
-
   async function handleSave() {
     if (!clientName.trim()) {
       setError('Client name is required.');
+      setLimitReached(false);
       return;
     }
     if (lineItems.every((item) => !item.description.trim())) {
       setError('Add at least one line item with a description.');
+      setLimitReached(false);
       return;
     }
 
     setError('');
+    setLimitReached(false);
     setSaving(true);
 
-    let clientId = selectedClientId;
-
-    // If new client, insert first
-    if (showNewClient && clientName.trim()) {
-      const { data: newClient, error: clientError } = await supabase
-        .from('clients')
-        .insert({
-          user_id: userId,
-          name: clientName.trim(),
-          email: clientEmail.trim(),
-          address: clientAddress.trim(),
-        })
-        .select()
-        .single();
-
-      if (clientError) {
-        setError('Failed to create client: ' + clientError.message);
-        setSaving(false);
-        return;
-      }
-
-      clientId = newClient.id;
-    }
-
-    const { error: insertError } = await supabase.from('invoices').insert({
-      user_id: userId,
-      invoice_number: invoiceNumber,
-      client_name: clientName.trim(),
-      client_email: clientEmail.trim(),
-      client_address: clientAddress.trim(),
-      client_id: clientId || null,
-      line_items: lineItems,
-      subtotal,
-      tax_rate: taxRate,
-      tax_amount: taxAmount,
-      total,
-      status: 'draft',
-      notes: notes.trim(),
-      invoice_date: invoiceDate,
-      due_date: dueDate,
+    const response = await fetch('/api/invoices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: selectedClientId || null,
+        client_name: clientName.trim(),
+        client_email: clientEmail.trim(),
+        client_address: clientAddress.trim(),
+        line_items: lineItems,
+        tax_rate: taxRate,
+        notes: notes.trim(),
+        invoice_date: invoiceDate,
+        due_date: dueDate,
+      }),
     });
 
-    if (insertError) {
-      setError('Failed to save invoice: ' + insertError.message);
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      setError(result?.error || 'Failed to save invoice.');
+      setLimitReached(result?.code === 'FREE_LIMIT_REACHED');
       setSaving(false);
       return;
     }
 
-    router.push('/dashboard');
+    router.push('/dashboard?created=true');
+  }
+
+  async function handleUpgrade() {
+    setBillingBusy(true);
+    setError('');
+
+    const response = await fetch('/api/billing/checkout', { method: 'POST' });
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok || !result?.url) {
+      setError(result?.error || 'Billing session unavailable.');
+      setLimitReached(false);
+      setBillingBusy(false);
+      return;
+    }
+
+    window.location.href = result.url;
   }
 
   const inputStyle = {
@@ -262,22 +221,12 @@ export default function NewInvoicePage() {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            {typeof window !== 'undefined' && PDFDownloadLink && PDFTemplate && (
-              <PDFDownloadLink
-                document={<PDFTemplate invoice={invoiceData} />}
-                fileName={`${invoiceNumber}.pdf`}
-              >
-                {({ loading: pdfLoading }) => (
-                  <button
-                    className="rounded-lg px-4 py-2 text-sm font-medium transition-opacity hover:opacity-80"
-                    style={{ color: '#f9fafb', border: '1px solid #374151' }}
-                    disabled={pdfLoading}
-                  >
-                    {pdfLoading ? 'Preparing...' : 'Download PDF'}
-                  </button>
-                )}
-              </PDFDownloadLink>
-            )}
+            <span
+              className="rounded-lg px-4 py-2 text-sm font-medium"
+              style={{ color: '#9ca3af', border: '1px solid #374151' }}
+            >
+              Save first to download PDF
+            </span>
             <button
               onClick={handleSave}
               disabled={saving}
@@ -293,14 +242,26 @@ export default function NewInvoicePage() {
       <main className="mx-auto max-w-7xl px-6 py-8">
         {error && (
           <div
-            className="mb-6 rounded-lg px-4 py-3 text-sm"
+            role="alert"
+            className="mb-6 flex flex-col gap-3 rounded-lg px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
             style={{
               backgroundColor: 'rgba(239, 68, 68, 0.1)',
               border: '1px solid rgba(239, 68, 68, 0.3)',
               color: '#fca5a5',
             }}
           >
-            {error}
+            <span>{error}</span>
+            {limitReached && (
+              <button
+                type="button"
+                onClick={handleUpgrade}
+                disabled={billingBusy}
+                className="rounded-lg px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+                style={{ backgroundColor: '#2563eb', color: '#f9fafb' }}
+              >
+                {billingBusy ? 'Opening...' : 'Upgrade to Pro'}
+              </button>
+            )}
           </div>
         )}
 
@@ -320,10 +281,11 @@ export default function NewInvoicePage() {
               </h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
+                  <label htmlFor="invoice-number" className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
                     Invoice Number
                   </label>
                   <input
+                    id="invoice-number"
                     type="text"
                     value={invoiceNumber}
                     readOnly
@@ -332,10 +294,11 @@ export default function NewInvoicePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
+                  <label htmlFor="invoice-date" className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
                     Invoice Date
                   </label>
                   <input
+                    id="invoice-date"
                     type="date"
                     value={invoiceDate}
                     onChange={(e) => setInvoiceDate(e.target.value)}
@@ -344,10 +307,11 @@ export default function NewInvoicePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
+                  <label htmlFor="due-date" className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
                     Due Date
                   </label>
                   <input
+                    id="due-date"
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
@@ -371,6 +335,7 @@ export default function NewInvoicePage() {
               </h2>
               <div className="mb-4">
                 <select
+                  aria-label="Select client"
                   value={showNewClient ? '__new__' : selectedClientId}
                   onChange={(e) => handleClientSelect(e.target.value)}
                   className="w-full rounded-lg px-3 py-2 text-sm"
@@ -389,10 +354,11 @@ export default function NewInvoicePage() {
               {(showNewClient || selectedClientId) && (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
+                    <label htmlFor="client-name" className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
                       Name *
                     </label>
                     <input
+                      id="client-name"
                       type="text"
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
@@ -402,10 +368,11 @@ export default function NewInvoicePage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
+                    <label htmlFor="client-email" className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
                       Email
                     </label>
                     <input
+                      id="client-email"
                       type="email"
                       value={clientEmail}
                       onChange={(e) => setClientEmail(e.target.value)}
@@ -415,10 +382,11 @@ export default function NewInvoicePage() {
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
+                    <label htmlFor="client-address" className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
                       Address
                     </label>
                     <textarea
+                      id="client-address"
                       value={clientAddress}
                       onChange={(e) => setClientAddress(e.target.value)}
                       rows={2}
@@ -456,6 +424,7 @@ export default function NewInvoicePage() {
                   <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
                     <div className="col-span-5">
                       <input
+                        aria-label={`Line item ${index + 1} description`}
                         type="text"
                         placeholder="Description"
                         value={item.description}
@@ -466,6 +435,7 @@ export default function NewInvoicePage() {
                     </div>
                     <div className="col-span-2">
                       <input
+                        aria-label={`Line item ${index + 1} quantity`}
                         type="number"
                         min="0"
                         value={item.quantity}
@@ -476,6 +446,7 @@ export default function NewInvoicePage() {
                     </div>
                     <div className="col-span-2">
                       <input
+                        aria-label={`Line item ${index + 1} rate`}
                         type="number"
                         min="0"
                         step="0.01"
@@ -526,6 +497,7 @@ export default function NewInvoicePage() {
                   <div className="flex items-center gap-2">
                     <span style={{ color: '#9ca3af' }}>Tax Rate</span>
                     <input
+                      aria-label="Tax rate percentage"
                       type="number"
                       min="0"
                       step="0.1"
@@ -557,6 +529,7 @@ export default function NewInvoicePage() {
                 Notes
               </h2>
               <textarea
+                aria-label="Invoice notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}

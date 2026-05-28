@@ -14,19 +14,55 @@ const statusConfig: Record<InvoiceStatus, { label: string; bg: string; text: str
   overdue: { label: 'Overdue', bg: 'rgba(239, 68, 68, 0.2)', text: '#fca5a5' },
 };
 
+type BillingStatus = {
+  plan: 'free' | 'pro';
+  status: string;
+  is_pro: boolean;
+  free_invoice_limit: number;
+  used_this_month: number;
+  remaining_this_month: number | null;
+};
+
+type Notice = {
+  tone: 'success' | 'warning';
+  message: string;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
-  const [showToast, setShowToast] = useState(false)
+  const [notice, setNotice] = useState<Notice | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get('created') === 'true') {
+      return { tone: 'success', message: 'Invoice saved.' };
+    }
+
+    if (params.get('checkout') === 'success') {
+      return {
+        tone: 'success',
+        message: 'Checkout complete. Your billing status will update after Stripe confirms payment.',
+      };
+    }
+
+    if (params.get('checkout') === 'cancelled') {
+      return { tone: 'warning', message: 'Checkout cancelled. Your plan was not changed.' };
+    }
+
+    return null;
+  });
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [billing, setBilling] = useState<BillingStatus | null>(null);
+  const [billingBusy, setBillingBusy] = useState(false);
+  const [billingError, setBillingError] = useState('');
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.location.search.includes("created=true")) {
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-      window.history.replaceState({}, "", "/dashboard");
-    }
-  }, []);
+    if (!notice) return;
+    window.history.replaceState({}, '', '/dashboard');
+    const timeout = window.setTimeout(() => setNotice(null), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [notice]);
 
   useEffect(() => {
     async function fetchInvoices() {
@@ -55,6 +91,23 @@ export default function DashboardPage() {
     fetchInvoices();
   }, [router]);
 
+  useEffect(() => {
+    async function fetchBilling() {
+      const response = await fetch('/api/billing/status');
+
+      if (response.status === 401) return;
+
+      if (!response.ok) {
+        setBillingError('Billing status unavailable.');
+        return;
+      }
+
+      setBilling((await response.json()) as BillingStatus);
+    }
+
+    fetchBilling();
+  }, []);
+
   const totalInvoiced = invoices.reduce((sum, inv) => sum + inv.total, 0);
   const totalPaid = invoices
     .filter((inv) => inv.status === 'paid')
@@ -76,6 +129,22 @@ export default function DashboardPage() {
   async function handleSignOut() {
     await supabase.auth.signOut();
     router.push('/login');
+  }
+
+  async function startBillingSession(endpoint: '/api/billing/checkout' | '/api/billing/portal') {
+    setBillingError('');
+    setBillingBusy(true);
+
+    const response = await fetch(endpoint, { method: 'POST' });
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok || !result?.url) {
+      setBillingError(result?.error || 'Billing session unavailable.');
+      setBillingBusy(false);
+      return;
+    }
+
+    window.location.href = result.url;
   }
 
   return (
@@ -119,6 +188,57 @@ export default function DashboardPage() {
       </header>
 
       <main className="mx-auto max-w-7xl px-6 py-8">
+        {notice && (
+          <div
+            className="mb-6 rounded-lg px-4 py-3 text-sm font-medium"
+            style={{
+              backgroundColor: notice.tone === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+              border: notice.tone === 'success' ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(245, 158, 11, 0.35)',
+              color: notice.tone === 'success' ? '#86efac' : '#fbbf24',
+            }}
+          >
+            {notice.message}
+          </div>
+        )}
+
+        <div
+          className="mb-8 flex flex-col gap-4 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between"
+          style={{ backgroundColor: '#111827', border: '1px solid #374151' }}
+        >
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+              Billing
+            </p>
+            <p className="mt-1 text-lg font-semibold" style={{ color: '#f9fafb' }}>
+              {billing?.is_pro ? 'Pro plan active' : 'Free plan'}
+            </p>
+            <p className="mt-1 text-sm" style={{ color: '#9ca3af' }}>
+              {billing?.is_pro
+                ? 'Unlimited invoices are enabled for this account.'
+                : billing
+                  ? `${billing.used_this_month}/${billing.free_invoice_limit} free invoices used this month.`
+                  : 'Checking invoice usage...'}
+            </p>
+            {billingError && (
+              <p className="mt-2 text-sm" style={{ color: '#fca5a5' }} role="alert">
+                {billingError}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => startBillingSession(billing?.is_pro ? '/api/billing/portal' : '/api/billing/checkout')}
+            disabled={billingBusy}
+            className="rounded-lg px-5 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+            style={{
+              backgroundColor: billing?.is_pro ? 'transparent' : '#2563eb',
+              border: billing?.is_pro ? '1px solid #374151' : '1px solid #2563eb',
+              color: '#f9fafb',
+            }}
+          >
+            {billingBusy ? 'Opening...' : billing?.is_pro ? 'Manage Billing' : 'Upgrade to Pro'}
+          </button>
+        </div>
+
         {/* Stats */}
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat) => (
@@ -142,7 +262,7 @@ export default function DashboardPage() {
 
         {/* Invoice List */}
         {loading ? (
-          <div className="flex items-center justify-center py-20">
+          <div className="flex items-center justify-center py-20" role="status" aria-label="Loading invoices">
             <div
               className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"
               style={{ borderColor: '#2563eb', borderTopColor: 'transparent' }}
@@ -197,6 +317,7 @@ export default function DashboardPage() {
                   {['Invoice', 'Client', 'Date', 'Due Date', 'Amount', 'Status'].map((h) => (
                     <th
                       key={h}
+                      scope="col"
                       className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                       style={{ color: '#9ca3af' }}
                     >
@@ -211,8 +332,7 @@ export default function DashboardPage() {
                   return (
                     <tr
                       key={invoice.id}
-                      onClick={() => router.push(`/invoice/${invoice.id}`)}
-                      className="cursor-pointer transition-colors"
+                      className="transition-colors"
                       style={{ borderBottom: '1px solid #374151' }}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.05)')
@@ -222,7 +342,9 @@ export default function DashboardPage() {
                       }
                     >
                       <td className="px-6 py-4 text-sm font-medium" style={{ color: '#f9fafb' }}>
-                        {invoice.invoice_number}
+                        <Link href={`/invoice/${invoice.id}`} className="hover:underline">
+                          {invoice.invoice_number}
+                        </Link>
                       </td>
                       <td className="px-6 py-4 text-sm" style={{ color: '#d1d5db' }}>
                         {invoice.client_name}

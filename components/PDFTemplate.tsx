@@ -1,5 +1,6 @@
 'use client'
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { companyInfo } from '@/lib/company'
 import { Invoice } from '@/types/invoice'
 import { formatCurrency, formatDate } from '@/lib/invoice-utils'
 
@@ -40,9 +41,10 @@ export function PDFTemplate({ invoice }: { invoice: Invoice }) {
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.companyName}>Booman Systems LLC</Text>
-            <Text style={styles.companyDetails}>admin@modeos.app</Text>
-            <Text style={styles.companyDetails}>boomanlab.com</Text>
+            <Text style={styles.companyName}>{companyInfo.legalName}</Text>
+            <Text style={styles.companyDetails}>{companyInfo.contactEmail}</Text>
+            <Text style={styles.companyDetails}>{companyInfo.phone}</Text>
+            <Text style={styles.companyDetails}>{companyInfo.location}</Text>
           </View>
           <View>
             <Text style={styles.invoiceTitle}>INVOICE</Text>

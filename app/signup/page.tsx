@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { AuthShell } from '@/components/AuthShell';
+import { getAuthErrorMessage, withAuthTimeout } from '@/lib/auth-timeout';
 import { supabase } from '@/lib/supabase';
 
 export default function SignupPage() {
@@ -21,110 +23,81 @@ export default function SignupPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
       return;
     }
 
     setLoading(true);
 
-    if (password.length < 8) { setError("Password must be at least 8 characters"); setLoading(false); return; }
-    if (!/[0-9]/.test(password)) { setError("Password must contain at least one number"); setLoading(false); return; }
-    const { error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (authError) {
-      setError(authError.message);
+    if (!/[0-9]/.test(password)) {
+      setError('Password must contain at least one number.');
       setLoading(false);
       return;
     }
 
-    setSuccess(true);
-    setLoading(false);
+    try {
+      const emailRedirectTo = `${window.location.origin}/dashboard`;
+      const { error: authError } = await withAuthTimeout(
+        supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo,
+          },
+        }),
+        'Account creation timed out. Check your connection and try again.',
+      );
+
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
+
+      setSuccess(true);
+    } catch (authError) {
+      setError(getAuthErrorMessage(authError, 'Account creation failed. Please try again.'));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4"
-      style={{ backgroundColor: '#0a0f1e' }}
+    <AuthShell
+      title={success ? 'Check your email' : 'Create account'}
+      description={success ? 'Confirm your account to finish setup.' : 'Start with a secure invoice workspace.'}
+      footer={!success ? (
+        <p>
+          Already have an account?{' '}
+          <Link href="/login" className="auth-link">
+            Sign in
+          </Link>
+        </p>
+      ) : undefined}
     >
-      <div
-        className="w-full max-w-md rounded-xl p-8 shadow-2xl"
-        style={{ backgroundColor: '#111827', border: '1px solid #374151' }}
-      >
-        <div className="mb-8 text-center">
-          <h1
-            className="text-3xl font-bold tracking-tight"
-            style={{ color: '#2563eb' }}
-          >
-            I Hate Invoices
-          </h1>
-          <p className="mt-2 text-sm" style={{ color: '#9ca3af' }}>
-            Create your account
-          </p>
-        </div>
-
         {success ? (
-          <div className="text-center space-y-4">
-            <div
-              className="rounded-lg px-4 py-6"
-              style={{
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                border: '1px solid rgba(34, 197, 94, 0.3)',
-              }}
-            >
-              <svg
-                className="mx-auto mb-3 h-10 w-10"
-                fill="none"
-                stroke="#22c55e"
-                strokeWidth={2}
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <p className="text-sm font-medium" style={{ color: '#86efac' }}>
-                Check your email to confirm your account.
-              </p>
-              <p className="mt-1 text-xs" style={{ color: '#9ca3af' }}>
-                We sent a confirmation link to <strong style={{ color: '#f9fafb' }}>{email}</strong>
-              </p>
+          <div className="auth-state">
+            <div className="auth-alert auth-alert-success" role="status">
+              Check your email to confirm your account.
             </div>
-            <Link
-              href="/login"
-              className="inline-block text-sm font-medium hover:underline"
-              style={{ color: '#2563eb' }}
-            >
+            <p>
+              We sent a confirmation link to <strong>{email}</strong>.
+            </p>
+            <Link href="/login" className="auth-link">
               Back to Sign In
             </Link>
           </div>
         ) : (
           <>
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="auth-form">
               {error && (
-                <div
-                  className="rounded-lg px-4 py-3 text-sm"
-                  style={{
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    color: '#fca5a5',
-                  }}
-                >
+                <div className="auth-alert auth-alert-error" role="alert">
                   {error}
                 </div>
               )}
 
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium mb-1.5"
-                  style={{ color: '#f9fafb' }}
-                >
+              <div className="auth-field">
+                <label htmlFor="email">
                   Email
                 </label>
                 <input
@@ -133,22 +106,13 @@ export default function SignupPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg px-4 py-2.5 text-sm outline-none transition-colors focus:ring-2"
-                  style={{
-                    backgroundColor: '#0a0f1e',
-                    border: '1px solid #374151',
-                    color: '#f9fafb',
-                  }}
+                  className="auth-input"
                   placeholder="you@example.com"
                 />
               </div>
 
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium mb-1.5"
-                  style={{ color: '#f9fafb' }}
-                >
+              <div className="auth-field">
+                <label htmlFor="password">
                   Password
                 </label>
                 <input
@@ -157,22 +121,13 @@ export default function SignupPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg px-4 py-2.5 text-sm outline-none transition-colors focus:ring-2"
-                  style={{
-                    backgroundColor: '#0a0f1e',
-                    border: '1px solid #374151',
-                    color: '#f9fafb',
-                  }}
-                  placeholder="At least 6 characters"
+                  className="auth-input"
+                  placeholder="At least 8 characters"
                 />
               </div>
 
-              <div>
-                <label
-                  htmlFor="confirm-password"
-                  className="block text-sm font-medium mb-1.5"
-                  style={{ color: '#f9fafb' }}
-                >
+              <div className="auth-field">
+                <label htmlFor="confirm-password">
                   Confirm Password
                 </label>
                 <input
@@ -181,12 +136,7 @@ export default function SignupPage() {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-lg px-4 py-2.5 text-sm outline-none transition-colors focus:ring-2"
-                  style={{
-                    backgroundColor: '#0a0f1e',
-                    border: '1px solid #374151',
-                    color: '#f9fafb',
-                  }}
+                  className="auth-input"
                   placeholder="Confirm your password"
                 />
               </div>
@@ -194,29 +144,25 @@ export default function SignupPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
-                style={{ backgroundColor: '#2563eb', color: '#f9fafb' }}
+                className="auth-primary"
               >
                 {loading ? 'Creating account...' : 'Create Account'}
               </button>
-            </form>
 
-            <p
-              className="mt-6 text-center text-sm"
-              style={{ color: '#9ca3af' }}
-            >
-              Already have an account?{' '}
-              <Link
-                href="/login"
-                className="font-medium hover:underline"
-                style={{ color: '#2563eb' }}
-              >
-                Sign in
-              </Link>
-            </p>
+              <p className="auth-small-copy">
+                By creating an account, you agree to the{' '}
+                <Link href="/terms" className="auth-link">
+                  Terms
+                </Link>{' '}
+                and{' '}
+                <Link href="/privacy" className="auth-link">
+                  Privacy Policy
+                </Link>
+                .
+              </p>
+            </form>
           </>
         )}
-      </div>
-    </div>
+    </AuthShell>
   );
 }
