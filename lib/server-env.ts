@@ -8,6 +8,10 @@ export function requireServerEnv(name: string): string {
   return value;
 }
 
+export function isMissingServerEnvError(error: unknown): boolean {
+  return error instanceof Error && error.message.startsWith('Missing required environment variable:');
+}
+
 export function getBaseUrl(origin?: string): string {
   const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
 

@@ -26,6 +26,7 @@ const stripeCalls = {
 };
 
 let state: BillingRouteState;
+let stripeConfigError: Error | null;
 
 function resetState(overrides: Partial<BillingRouteState> = {}) {
   state = {
@@ -42,6 +43,7 @@ function resetState(overrides: Partial<BillingRouteState> = {}) {
   stripeCalls.customersCreate.mockResolvedValue({ id: 'cus_created' });
   stripeCalls.checkoutCreate.mockResolvedValue({ url: 'https://checkout.stripe.test/session' });
   stripeCalls.portalCreate.mockResolvedValue({ url: 'https://billing.stripe.test/session' });
+  stripeConfigError = null;
 }
 
 function billingProfile(overrides: Partial<BillingProfile> = {}): BillingProfile {
@@ -132,6 +134,7 @@ async function billingPortal(init: NextRequestInit = {}) {
 
 beforeEach(() => {
   vi.resetModules();
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
   vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://www.ihateinvoices.com');
   resetState();
 
@@ -142,25 +145,30 @@ beforeEach(() => {
 
   vi.doMock('@/lib/stripe', () => ({
     getProPriceId: () => 'price_test_pro',
-    getStripe: () => ({
-      customers: {
-        create: stripeCalls.customersCreate,
-      },
-      checkout: {
-        sessions: {
-          create: stripeCalls.checkoutCreate,
+    getStripe: () => {
+      if (stripeConfigError) throw stripeConfigError;
+
+      return {
+        customers: {
+          create: stripeCalls.customersCreate,
         },
-      },
-      billingPortal: {
-        sessions: {
-          create: stripeCalls.portalCreate,
+        checkout: {
+          sessions: {
+            create: stripeCalls.checkoutCreate,
+          },
         },
-      },
-    }),
+        billingPortal: {
+          sessions: {
+            create: stripeCalls.portalCreate,
+          },
+        },
+      };
+    },
   }));
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.doUnmock('@/lib/supabase-server');
   vi.doUnmock('@/lib/stripe');
   vi.unstubAllEnvs();
@@ -253,6 +261,19 @@ describe('billing API routes', () => {
     );
   });
 
+  it('returns 503 from checkout when Stripe server configuration is missing', async () => {
+    stripeConfigError = new Error('Missing required environment variable: STRIPE_SECRET_KEY');
+
+    const response = await billingCheckout();
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Payment setup is not configured yet.',
+    });
+    expect(stripeCalls.customersCreate).not.toHaveBeenCalled();
+    expect(stripeCalls.checkoutCreate).not.toHaveBeenCalled();
+  });
+
   it('opens the billing portal from checkout when the user is already Pro', async () => {
     resetState({
       profile: billingProfile({
@@ -315,5 +336,22 @@ describe('billing API routes', () => {
       customer: 'cus_portal',
       return_url: 'https://www.ihateinvoices.com/dashboard',
     });
+  });
+
+  it('returns 503 from billing portal when Stripe server configuration is missing', async () => {
+    resetState({
+      profile: billingProfile({
+        stripe_customer_id: 'cus_portal',
+      }),
+    });
+    stripeConfigError = new Error('Missing required environment variable: STRIPE_SECRET_KEY');
+
+    const response = await billingPortal();
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Payment setup is not configured yet.',
+    });
+    expect(stripeCalls.portalCreate).not.toHaveBeenCalled();
   });
 });

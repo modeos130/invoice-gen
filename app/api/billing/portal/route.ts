@@ -3,6 +3,7 @@ import { buildBillingPortalSessionParams } from '@/lib/billing-routes';
 import { rateLimitRequest, rejectCrossOriginPost } from '@/lib/request-security';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase-server';
 import { getStripe } from '@/lib/stripe';
+import { isMissingServerEnvError } from '@/lib/server-env';
 import type { BillingProfile } from '@/lib/billing';
 
 export async function POST(request: NextRequest) {
@@ -42,9 +43,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No Stripe customer found' }, { status: 400 });
   }
 
-  const session = await getStripe().billingPortal.sessions.create(
-    buildBillingPortalSessionParams(billingProfile.stripe_customer_id, request.nextUrl.origin)
-  );
+  try {
+    const session = await getStripe().billingPortal.sessions.create(
+      buildBillingPortalSessionParams(billingProfile.stripe_customer_id, request.nextUrl.origin)
+    );
 
-  return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url });
+  } catch (sessionError) {
+    if (isMissingServerEnvError(sessionError)) {
+      console.error('Stripe billing portal is missing required server configuration.');
+      return NextResponse.json({ error: 'Payment setup is not configured yet.' }, { status: 503 });
+    }
+
+    console.error('Stripe billing portal session creation failed.');
+    return NextResponse.json({ error: 'Billing portal unavailable.' }, { status: 502 });
+  }
 }
