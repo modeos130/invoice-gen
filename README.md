@@ -42,17 +42,18 @@ Preview/development can use Stripe test-mode keys. Production must use live Stri
 ```bash
 npm run lint
 npm run readiness
+npm run test:unit
 npm run typecheck
 npm run build
 npm run smoke
 npm audit --audit-level=low
 ```
 
-`npm run verify` runs lint, typecheck, and build together. `npm run readiness` checks release-critical files, protected-copy expectations, and the saved-only PDF export rule. `npm run smoke` checks local or preview route responses and baseline security headers.
+`npm run verify` runs lint, typecheck, and build together. `npm run readiness` checks release-critical files, protected-copy expectations, and the saved-only PDF export rule. `npm run test:unit` runs Vitest tests for pure helpers. `npm run smoke` checks local or preview route responses and baseline security headers.
 
 ## CI
 
-GitHub Actions runs `npm ci`, `npm run verify`, `npm run readiness`, starts the production server, and runs `npm run smoke` on pushes to `main` and pull requests. This proves the committed source can install, build, serve the public/protected smoke routes, and retain key release guardrails. It does not replace authenticated user QA, Supabase migration approval, production deployment approval, or live Stripe payment testing.
+GitHub Actions runs `npm ci`, `npm run verify`, `npm run readiness`, `npm run test:unit`, starts the production server, and runs `npm run smoke` on pushes to `main` and pull requests. This proves the committed source can install, build, serve the public/protected smoke routes, run pure-helper tests, and retain key release guardrails. It does not replace authenticated user QA, Supabase migration approval, production deployment approval, or live Stripe payment testing.
 
 ## Production Notes
 

@@ -15,7 +15,7 @@ All paths are under `/Users/booman/projects/invoice-gen` unless noted.
 | Supabase email | Transactional auth email | Auth pages | Supabase dashboard config | Medium | Email redirect allowlist and real reset/signup QA still required. |
 | Security headers | Basic response hardening | `next.config.ts` | None | Medium | Added nosniff, frame deny, referrer policy, permissions policy. CSP still needed. |
 | SEO metadata | Titles, descriptions, OG/Twitter, robots, sitemap | `app/layout.tsx`, `app/robots.ts`, `app/sitemap.ts` | `NEXT_PUBLIC_APP_URL` | Medium | Added safe baseline; production must deploy it. |
-| Testing tools | Static validation only | `package.json` | None | High | No unit/integration/E2E framework yet. |
+| Testing tools | Static validation, unit tests, smoke checks | `package.json`, `tests/*`, `scripts/*`, `.github/workflows/ci.yml` | None | Medium | Vitest unit tests exist; E2E, API integration, Stripe fixture, and RLS tests still needed. |
 | Analytics/monitoring | Not present | No Sentry/PostHog/logger code found | TBD | Medium | Needed before paid public launch. |
 
 ## Dependency Notes

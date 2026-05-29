@@ -1,9 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 
-const root = process.cwd();
-
-const requiredFiles = [
+export const requiredFiles = [
   '.env.example',
   '.github/workflows/ci.yml',
   'app/api/invoices/route.ts',
@@ -24,7 +23,7 @@ const requiredFiles = [
   'supabase/migrations/20260523095504_add_billing_subscriptions.sql',
 ];
 
-const runtimeFilesToScan = [
+export const runtimeFilesToScan = [
   'app/page.tsx',
   'app/layout.tsx',
   'app/login/page.tsx',
@@ -45,28 +44,6 @@ const runtimeFilesToScan = [
   'lib/company.ts',
 ];
 
-const failures = [];
-
-for (const file of requiredFiles) {
-  if (!existsSync(join(root, file))) {
-    failures.push(`missing required file: ${file}`);
-  }
-}
-
-const packageJson = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-for (const scriptName of ['verify', 'smoke', 'readiness']) {
-  if (!packageJson.scripts?.[scriptName]) {
-    failures.push(`missing package script: ${scriptName}`);
-  }
-}
-
-const newInvoiceSource = readFileSync(join(root, 'app/invoice/new/page.tsx'), 'utf8');
-for (const blockedPdfToken of ['PDFDownloadLink', 'PDFTemplate']) {
-  if (newInvoiceSource.includes(blockedPdfToken)) {
-    failures.push(`new invoice page must not include unsaved PDF export token: ${blockedPdfToken}`);
-  }
-}
-
 const forbiddenRuntimeCopy = [
   /DJ\s+Booman/i,
   /Wyoming/i,
@@ -74,20 +51,50 @@ const forbiddenRuntimeCopy = [
   /opinionated/i,
 ];
 
-for (const file of runtimeFilesToScan) {
-  const source = readFileSync(join(root, file), 'utf8');
-  for (const pattern of forbiddenRuntimeCopy) {
-    if (pattern.test(source)) {
-      failures.push(`forbidden runtime copy ${pattern} found in ${file}`);
+export function runReadinessGuard(root = process.cwd()) {
+  const failures = [];
+
+  for (const file of requiredFiles) {
+    if (!existsSync(join(root, file))) {
+      failures.push(`missing required file: ${file}`);
     }
   }
-}
 
-if (failures.length > 0) {
-  for (const failure of failures) {
-    console.error(`FAIL ${failure}`);
+  const packageJson = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+  for (const scriptName of ['verify', 'smoke', 'readiness']) {
+    if (!packageJson.scripts?.[scriptName]) {
+      failures.push(`missing package script: ${scriptName}`);
+    }
   }
-  process.exit(1);
+
+  const newInvoiceSource = readFileSync(join(root, 'app/invoice/new/page.tsx'), 'utf8');
+  for (const blockedPdfToken of ['PDFDownloadLink', 'PDFTemplate']) {
+    if (newInvoiceSource.includes(blockedPdfToken)) {
+      failures.push(`new invoice page must not include unsaved PDF export token: ${blockedPdfToken}`);
+    }
+  }
+
+  for (const file of runtimeFilesToScan) {
+    const source = readFileSync(join(root, file), 'utf8');
+    for (const pattern of forbiddenRuntimeCopy) {
+      if (pattern.test(source)) {
+        failures.push(`forbidden runtime copy ${pattern} found in ${file}`);
+      }
+    }
+  }
+
+  return failures;
 }
 
-console.log('Readiness guard passed.');
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const failures = runReadinessGuard();
+
+  if (failures.length > 0) {
+    for (const failure of failures) {
+      console.error(`FAIL ${failure}`);
+    }
+    process.exit(1);
+  }
+
+  console.log('Readiness guard passed.');
+}

@@ -74,7 +74,7 @@ See `STACK_INVENTORY.md`.
 | Category | Score | Grade | Evidence | Main fixes |
 |---|---:|---|---|---|
 | Product Functionality | 9/15 | Needs Work | Core routes and API exist | Edit/delete, send/payment links, full QA. |
-| Code Quality / Architecture | 6/10 | Needs Work | Build/lint/typecheck pass | Server-side data loading, tests, remove drift. |
+| Code Quality / Architecture | 6.5/10 | Needs Work | Build/lint/typecheck/unit tests pass | Server-side data loading, broader tests, remove live drift. |
 | Security | 8/15 | Needs Work | RLS, webhook signatures, server keys | Atomic quota, CSRF/rate limits, CSP. |
 | Authentication / Authorization | 5/8 | Needs Work | `proxy.ts`, Supabase SSR clients | Deploy cookie fix, add E2E auth tests. |
 | Database / Data Integrity | 4.5/8 | Dangerous | RLS/schema exist; app-level input limits added | RPC/transactions, DB constraints, indexes. |
@@ -85,7 +85,7 @@ See `STACK_INVENTORY.md`.
 | Performance | 3/5 | Needs Work | Static public route, font optimized | PDF lazy load, pagination, server data. |
 | SEO / Metadata / Social Sharing | 2.5/4 | Needs Work | Metadata/robots/sitemap added | Deploy and add richer OG asset/schema. |
 | Legal / Privacy / Compliance | 2/4 | Dangerous | Local pages exist | Production deploy and policy expansion. |
-| Testing Coverage | 0.5/4 | Blocker | No test framework | Add E2E/API/RLS tests. |
+| Testing Coverage | 1.3/4 | Needs Work | Vitest unit tests, smoke checks, readiness guard | Add authenticated E2E/API/RLS/Stripe tests. |
 
 Current beta-readiness percentage: 58%. Current production-readiness percentage: 43%. Confidence: high for local code/build findings; medium for live Supabase/Stripe state because hosted database and live Stripe are not fully proven in this pass.
 
@@ -96,7 +96,7 @@ Current beta-readiness percentage: 58%. Current production-readiness percentage:
 3. Production Stripe live Product/Price/webhook/portal not configured/proven.
 4. Supabase production migration state must be verified.
 5. Free invoice quota and invoice numbering are not atomic.
-6. No automated auth/billing/RLS/E2E tests.
+6. No automated auth/billing/RLS/E2E tests; unit tests now cover only pure helpers and readiness guard.
 7. Legal pages are not live and missing policy depth.
 8. No monitoring/error tracking/uptime alerts.
 9. No rate limiting or origin/CSRF checks on state-changing routes.
@@ -146,7 +146,7 @@ Public pages should perform well once deployed because the homepage is static an
 
 ## 17. Testing Findings
 
-No real automated tests exist. See `QA_TEST_PLAN.md`.
+Vitest unit tests now cover pure billing/env helpers and the static readiness guard. Smoke and readiness scripts cover public routes, protected redirects, selected unauthenticated API behavior, blocked stale copy, required files, and saved-only PDF export guardrails. Missing: authenticated browser E2E, API integration tests with mocked Supabase/Stripe, signed Stripe webhook fixtures, Supabase RLS/cross-user tests, accessibility tests, and visual regression tests. See `QA_TEST_PLAN.md`.
 
 ## 18. DevOps / Deployment Findings
 
@@ -158,7 +158,7 @@ Added metadata, Open Graph/Twitter summary, robots, and sitemap. Public launch s
 
 ## 20. AI-Code Cleanup Findings
 
-Issues found: untracked critical files, stock README before this pass, missing env example before this pass, no tests, duplicated status config, client-side data loading where server-side would be cleaner, stale deployment, no admin/operator tooling, and generated-looking mockup classes. No `DJ Booman`, `Wyoming`, `InvoiceGen`, or `opinionated` product copy was found in source search.
+Issues found: untracked critical files before release stabilization, stock README before this pass, missing env example before this pass, previously absent tests, duplicated status config, client-side data loading where server-side would be cleaner, stale deployment, no admin/operator tooling, and generated-looking mockup classes. No `DJ Booman`, `Wyoming`, `InvoiceGen`, or `opinionated` product copy was found in source search.
 
 ## 21. Fixes Implemented
 
@@ -184,7 +184,7 @@ Issues found: untracked critical files, stock README before this pass, missing e
 |---|---|---|---|
 | Atomic quota/invoice numbering migration | Live DB migration is risky/destructive-adjacent without approval | High | Approve DB migration design and application. |
 | Live Stripe setup | Requires owner approval for real money | Critical | Configure live Stripe and run controlled live test. |
-| CI/test framework | Larger implementation scope | High | Add Vitest/Playwright in next phase. |
+| Authenticated E2E/API/RLS tests | Requires browser/database/test-user setup | High | Add Playwright/API/RLS tests in a later phase. |
 | CSP | Needs tested allowlist for Supabase/Stripe/PDF behavior | Medium | Add after browser QA. |
 | Production deploy | User did not explicitly approve production deploy in this turn | Critical | Approve deploy after docs/fixes review. |
 | Monitoring | Requires service choice/account | Medium | Pick Sentry/PostHog/Uptime provider. |

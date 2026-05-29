@@ -2,7 +2,7 @@
 
 ## Current Testing State
 
-There is no unit, integration, API, E2E, accessibility, or visual regression test framework installed. Current validation is lint, TypeScript, build, audit, and manual smoke checks.
+Vitest unit testing is installed for pure helper coverage. Current automated checks include lint, TypeScript, production build, static readiness guard, unit tests, and route smoke checks. Integration, API, authenticated E2E, accessibility, visual regression, Stripe webhook fixture, and Supabase RLS tests are still missing.
 
 ## Minimum Tests Required Before Beta
 
@@ -43,6 +43,7 @@ There is no unit, integration, API, E2E, accessibility, or visual regression tes
 ```bash
 npm run lint
 npm run readiness
+npm run test:unit
 npm run typecheck
 npm run build
 npm run smoke
@@ -52,7 +53,6 @@ npm audit --audit-level=low
 Future commands after test tooling is added:
 
 ```bash
-npm test
 npm run test:e2e
 npm run test:a11y
 ```
