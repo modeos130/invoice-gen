@@ -17,8 +17,19 @@ type InvoicePayload = {
   due_date?: string;
 };
 
+const MAX_CLIENT_NAME_LENGTH = 140;
+const MAX_CLIENT_EMAIL_LENGTH = 254;
+const MAX_CLIENT_ADDRESS_LENGTH = 800;
+const MAX_NOTES_LENGTH = 1200;
+const MAX_LINE_ITEMS = 50;
+const MAX_LINE_ITEM_DESCRIPTION_LENGTH = 240;
+const MAX_QUANTITY = 100000;
+const MAX_RATE = 1000000;
+const MAX_LINE_AMOUNT = 10000000;
+
 function normalizeLineItems(input: InvoicePayload['line_items']): LineItem[] | null {
   if (!Array.isArray(input)) return null;
+  if (input.length > MAX_LINE_ITEMS) return null;
 
   const items = input
     .map((item, index) => {
@@ -27,15 +38,20 @@ function normalizeLineItems(input: InvoicePayload['line_items']): LineItem[] | n
       const rate = Number(item.rate ?? 0);
 
       if (!description) return null;
+      if (description.length > MAX_LINE_ITEM_DESCRIPTION_LENGTH) return null;
       if (!Number.isFinite(quantity) || quantity < 0) return null;
       if (!Number.isFinite(rate) || rate < 0) return null;
+      if (quantity > MAX_QUANTITY || rate > MAX_RATE) return null;
+
+      const amount = quantity * rate;
+      if (!Number.isFinite(amount) || amount > MAX_LINE_AMOUNT) return null;
 
       return {
         id: String(item.id ?? index + 1),
         description,
         quantity,
         rate,
-        amount: quantity * rate,
+        amount,
       };
     })
     .filter((item): item is LineItem => Boolean(item));
@@ -45,6 +61,10 @@ function normalizeLineItems(input: InvoicePayload['line_items']): LineItem[] | n
 
 function isDateInput(value: unknown): value is string {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function isOversized(value: string, maxLength: number): boolean {
+  return value.length > maxLength;
 }
 
 export async function POST(request: NextRequest) {
@@ -91,6 +111,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invoice date and due date are required.' }, { status: 400 });
   }
 
+  if (payload.due_date < payload.invoice_date) {
+    return NextResponse.json({ error: 'Due date cannot be earlier than invoice date.' }, { status: 400 });
+  }
+
   const { data: profile, error: profileError } = await supabase
     .from('billing_profiles')
     .select('plan,status')
@@ -129,6 +153,16 @@ export async function POST(request: NextRequest) {
   let clientName = String(payload.client_name ?? '').trim();
   let clientEmail = String(payload.client_email ?? '').trim();
   let clientAddress = String(payload.client_address ?? '').trim();
+  const notes = String(payload.notes ?? '').trim();
+
+  if (
+    isOversized(clientName, MAX_CLIENT_NAME_LENGTH) ||
+    isOversized(clientEmail, MAX_CLIENT_EMAIL_LENGTH) ||
+    isOversized(clientAddress, MAX_CLIENT_ADDRESS_LENGTH) ||
+    isOversized(notes, MAX_NOTES_LENGTH)
+  ) {
+    return NextResponse.json({ error: 'Invoice or client details are too long.' }, { status: 400 });
+  }
 
   if (clientId) {
     const { data: client, error: clientError } = await supabase
@@ -198,7 +232,7 @@ export async function POST(request: NextRequest) {
       tax_amount: taxAmount,
       total,
       status: 'draft',
-      notes: String(payload.notes ?? '').trim(),
+      notes,
       invoice_date: payload.invoice_date,
       due_date: payload.due_date,
     })

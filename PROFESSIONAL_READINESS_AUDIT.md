@@ -77,7 +77,7 @@ See `STACK_INVENTORY.md`.
 | Code Quality / Architecture | 6/10 | Needs Work | Build/lint/typecheck pass | Server-side data loading, tests, remove drift. |
 | Security | 8/15 | Needs Work | RLS, webhook signatures, server keys | Atomic quota, CSRF/rate limits, CSP. |
 | Authentication / Authorization | 5/8 | Needs Work | `proxy.ts`, Supabase SSR clients | Deploy cookie fix, add E2E auth tests. |
-| Database / Data Integrity | 4/8 | Dangerous | RLS/schema exist | RPC/transactions, constraints, indexes. |
+| Database / Data Integrity | 4.5/8 | Dangerous | RLS/schema exist; app-level input limits added | RPC/transactions, DB constraints, indexes. |
 | Payment / Financial Flow | 4/8 | Dangerous | Stripe routes exist | Live Stripe config and paid-flow QA. |
 | Error Handling / Reliability | 4/7 | Needs Work | Basic route errors | Global error/not-found UX, safe logs, retries. |
 | UX/UI / Responsive Design | 5/7 | Good | Coherent public/auth/app UI | Mobile tables/forms, first-run checklist. |
@@ -116,7 +116,7 @@ Stripe Checkout, Customer Portal, and webhook code exist locally. The webhook ve
 
 ## 12. Database / Data Findings
 
-Tables: `clients`, `invoices`, `billing_profiles`, `stripe_webhook_events`. RLS is enabled. Key gaps: migration history is not a full rebuild baseline, free-tier enforcement is app-level and bypassable/race-prone at the DB boundary, invoice numbering is count-based, webhook dedupe is non-atomic, invoice totals and string lengths need DB constraints, and composite indexes are missing for hot queries.
+Tables: `clients`, `invoices`, `billing_profiles`, `stripe_webhook_events`. RLS is enabled. Basic app-level input limits now exist for invoice creation and matching UI fields. Key gaps remain: migration history is not a full rebuild baseline, free-tier enforcement is app-level and bypassable/race-prone at the DB boundary, invoice numbering is count-based, webhook dedupe is non-atomic, invoice totals and string lengths still need DB constraints, and composite indexes are missing for hot queries.
 
 Required migrations need approval before live application.
 
@@ -171,6 +171,8 @@ Issues found: untracked critical files, stock README before this pass, missing e
 | `app/clients/page.tsx` | Form labels, alert/status roles, table scopes | Accessibility improvement | Submit empty form and inspect focus/screen reader cues. |
 | `lib/server-env.ts` | Production base URL now fails closed if missing | Prevents Stripe return URL drift | Missing prod app URL should error server-side. |
 | `next.config.ts` | Added baseline security headers | Reduces common browser risk | Check response headers after deploy. |
+| `app/api/invoices/route.ts` | Added client, invoice, note, line-item, amount, and date limits | Reduces storage abuse and PDF-rendering abuse risk | Submit oversized invoice payloads; API should return `400`. |
+| `app/invoice/new/page.tsx`, `app/clients/page.tsx` | Added matching form limits for common fields | Gives users earlier feedback before server rejection | Try entering oversized field values. |
 | `app/layout.tsx` | Added canonical, OG, Twitter metadata | Improves sharing/search baseline | View page metadata. |
 | `app/robots.ts`, `app/sitemap.ts` | Added crawl controls and sitemap | SEO/readiness baseline | Visit `/robots.txt`, `/sitemap.xml`. |
 | `package.json` | Added `typecheck` and `verify` scripts | Gives repeatable validation commands | Run `npm run verify`. |

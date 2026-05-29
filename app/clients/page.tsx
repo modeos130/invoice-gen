@@ -211,6 +211,7 @@ export default function ClientsPage() {
                     id="client-name"
                     type="text"
                     required
+                    maxLength={140}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full rounded-lg px-3 py-2 text-sm"
@@ -229,6 +230,7 @@ export default function ClientsPage() {
                   <input
                     id="client-email"
                     type="email"
+                    maxLength={254}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full rounded-lg px-3 py-2 text-sm"
@@ -247,6 +249,7 @@ export default function ClientsPage() {
                   <input
                     id="client-phone"
                     type="tel"
+                    maxLength={40}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full rounded-lg px-3 py-2 text-sm"
@@ -265,6 +268,7 @@ export default function ClientsPage() {
                   <input
                     id="client-address"
                     type="text"
+                    maxLength={800}
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     className="w-full rounded-lg px-3 py-2 text-sm"

@@ -360,6 +360,7 @@ export default function NewInvoicePage() {
                     <input
                       id="client-name"
                       type="text"
+                      maxLength={140}
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
                       className="w-full rounded-lg px-3 py-2 text-sm"
@@ -374,6 +375,7 @@ export default function NewInvoicePage() {
                     <input
                       id="client-email"
                       type="email"
+                      maxLength={254}
                       value={clientEmail}
                       onChange={(e) => setClientEmail(e.target.value)}
                       className="w-full rounded-lg px-3 py-2 text-sm"
@@ -387,6 +389,7 @@ export default function NewInvoicePage() {
                     </label>
                     <textarea
                       id="client-address"
+                      maxLength={800}
                       value={clientAddress}
                       onChange={(e) => setClientAddress(e.target.value)}
                       rows={2}
@@ -426,6 +429,7 @@ export default function NewInvoicePage() {
                       <input
                         aria-label={`Line item ${index + 1} description`}
                         type="text"
+                        maxLength={240}
                         placeholder="Description"
                         value={item.description}
                         onChange={(e) => updateLineItem(index, 'description', e.target.value)}
@@ -438,6 +442,7 @@ export default function NewInvoicePage() {
                         aria-label={`Line item ${index + 1} quantity`}
                         type="number"
                         min="0"
+                        max="100000"
                         value={item.quantity}
                         onChange={(e) => updateLineItem(index, 'quantity', e.target.value)}
                         className="w-full rounded-lg px-3 py-2 text-sm"
@@ -449,6 +454,7 @@ export default function NewInvoicePage() {
                         aria-label={`Line item ${index + 1} rate`}
                         type="number"
                         min="0"
+                        max="1000000"
                         step="0.01"
                         value={item.rate}
                         onChange={(e) => updateLineItem(index, 'rate', e.target.value)}
@@ -530,6 +536,7 @@ export default function NewInvoicePage() {
               </h2>
               <textarea
                 aria-label="Invoice notes"
+                maxLength={1200}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
