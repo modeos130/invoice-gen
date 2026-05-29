@@ -49,6 +49,10 @@ npm audit --audit-level=low
 
 `npm run verify` runs lint, typecheck, and build together.
 
+## CI
+
+GitHub Actions runs `npm ci`, `npm run verify`, starts the production server, and runs `npm run smoke` on pushes to `main` and pull requests. This proves the committed source can install, build, and serve the public/protected smoke routes. It does not replace authenticated user QA, Supabase migration approval, production deployment approval, or live Stripe payment testing.
+
 ## Production Notes
 
 Production is not ready for paid launch until the current billing/legal API surface is deployed, live Stripe Product/Price/webhook/portal are configured, Supabase migrations are confirmed live, and authenticated QA proves signup, invoice creation, quota enforcement, checkout, webhook entitlement, billing portal, cancellation, and password reset.

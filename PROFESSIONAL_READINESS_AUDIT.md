@@ -150,7 +150,7 @@ No real automated tests exist. See `QA_TEST_PLAN.md`.
 
 ## 18. DevOps / Deployment Findings
 
-Deployment readiness: 60/100. Local lint, typecheck, and build pass. Vercel config exists. No CI, no clean release branch proof, no rollback/runbook beyond docs, no monitoring, no committed env template before this pass, and production is stale versus local source.
+Deployment readiness: 68/100. Local lint, typecheck, build, and smoke checks pass. Vercel config exists, and CI now runs install, verify, production start, and smoke checks for pushes to `main` and pull requests. Remaining gaps are production deploy approval, live environment verification, authenticated manual QA, rollback rehearsal, monitoring, and proof that production is no longer stale versus local source.
 
 ## 19. SEO / Brand Findings
 

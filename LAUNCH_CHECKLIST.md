@@ -3,6 +3,7 @@
 ## Before Beta
 
 - [ ] Commit and push all launch-critical files; `git status --short` must be clean except ignored local env/build files.
+- [ ] Confirm GitHub Actions CI passes on the pushed commit.
 - [ ] Deploy the current source to a preview URL.
 - [ ] Confirm preview returns `200` for `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`, `/privacy`, `/refunds`.
 - [ ] Confirm preview returns `401` for unauthenticated `/api/billing/status`.
@@ -17,6 +18,7 @@
 
 ## Before Public Paid Launch
 
+- [ ] Confirm CI, preview smoke, and authenticated manual QA all pass on the release commit.
 - [ ] Apply and verify Supabase production migrations.
 - [ ] Configure production `NEXT_PUBLIC_APP_URL=https://www.ihateinvoices.com`.
 - [ ] Configure live Stripe `STRIPE_SECRET_KEY`.
