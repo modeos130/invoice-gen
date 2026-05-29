@@ -154,6 +154,9 @@ export default function DashboardPage() {
       subtitle="Track invoices, clients, and billing from one workspace."
       actions={
         <>
+          <Link href="/" className="app-btn app-btn-ghost">
+            Home
+          </Link>
           <Link href="/clients" className="app-btn app-btn-secondary">
             Clients
           </Link>
