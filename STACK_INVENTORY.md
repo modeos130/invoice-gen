@@ -13,7 +13,7 @@ All paths are under `/Users/booman/projects/invoice-gen` unless noted.
 | React PDF | Saved invoice PDF export | `components/PDFTemplate.tsx`, invoice detail route | None | Medium | Unsaved PDF bypass was removed; heavy chunks should be loaded only on demand later. |
 | Vercel | Hosting/deployment | `vercel.json`, `.vercel/project.json` | Vercel project env | High | Production 404s for current legal/API routes; deploy drift blocks launch. |
 | Supabase email | Transactional auth email | Auth pages | Supabase dashboard config | Medium | Email redirect allowlist and real reset/signup QA still required. |
-| Security headers | Basic response hardening | `next.config.ts` | None | Medium | Added nosniff, frame deny, referrer policy, permissions policy. CSP still needed. |
+| Security headers | Basic response hardening and CSP | `next.config.ts`, `scripts/smoke-local.mjs` | None | Medium | Added nosniff, frame deny, referrer policy, permissions policy, and enforced CSP baseline; authenticated preview browser QA still required. |
 | SEO metadata | Titles, descriptions, OG/Twitter, robots, sitemap | `app/layout.tsx`, `app/robots.ts`, `app/sitemap.ts` | `NEXT_PUBLIC_APP_URL` | Medium | Added safe baseline; production must deploy it. |
 | Testing tools | Static validation, unit tests, smoke checks | `package.json`, `tests/*`, `scripts/*`, `.github/workflows/ci.yml` | None | Medium | Vitest unit tests exist for helpers, route wrappers, Stripe webhook duplicate claiming, and atomic invoice RPC flag behavior; E2E, preview Stripe replay, and RLS tests still needed. |
 | Analytics/monitoring | Not present | No Sentry/PostHog/logger code found | TBD | Medium | Needed before paid public launch. |

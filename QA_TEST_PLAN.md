@@ -18,6 +18,7 @@ Vitest unit testing is installed for pure helper and selected API wrapper covera
 | Public routes | `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`, `/privacy`, `/refunds` | All return `200` on preview. |
 | 404 fallback | Unknown route such as `/definitely-missing` | Returns `404` with the branded not-found page. |
 | Legal links | Footer/auth links | Links resolve and display Booman Systems LLC contact info configured in `lib/company.ts`. |
+| CSP smoke | Root route response headers | Enforced `Content-Security-Policy` header is present and matches the expected baseline. |
 
 ## Minimum Tests Required Before Paid Public Launch
 
@@ -31,6 +32,7 @@ Vitest unit testing is installed for pure helper and selected API wrapper covera
 | RLS | Two users with clients/invoices | Neither user can read/update the other user's data. |
 | Error handling | Bad auth, bad payload, missing env, Stripe failure | User gets safe message; logs contain useful server-side detail. |
 | Accessibility | Keyboard-only auth/dashboard/invoice flows | Focus visible, no keyboard traps, form errors announced. |
+| CSP browser QA | Signup, dashboard, PDF, checkout, billing portal | No CSP violations block required app behavior in browser devtools. |
 
 ## Suggested Test Stack
 

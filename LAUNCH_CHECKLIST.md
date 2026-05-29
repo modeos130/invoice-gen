@@ -10,6 +10,7 @@
 - [ ] Confirm preview returns `404` with branded fallback UI for an unknown route.
 - [ ] Confirm preview returns `401` for unauthenticated `/api/billing/status`.
 - [ ] Confirm preview Stripe webhook returns `400` without a Stripe signature.
+- [ ] Confirm CSP is present and does not break signup, dashboard, PDF download, checkout redirect, or billing portal.
 - [ ] Run signup, email verification, login, logout, password reset.
 - [ ] Add a client.
 - [ ] Create saved invoices until the free limit is hit.
@@ -34,7 +35,7 @@
 - [ ] Verify webhook grants Pro entitlement.
 - [ ] Verify cancellation removes Pro entitlement.
 - [ ] Decide sales tax/VAT handling with accountant guidance.
-- [ ] Add tested CSP and confirm production abuse-monitoring coverage.
+- [ ] Confirm production CSP and production abuse-monitoring coverage.
 - [ ] Add monitoring/error tracking.
 - [ ] Add automated E2E and RLS tests.
 

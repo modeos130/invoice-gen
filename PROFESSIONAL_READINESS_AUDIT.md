@@ -6,9 +6,9 @@ All file paths are under `/Users/booman/projects/invoice-gen` unless noted. `inv
 
 - Site name: I Hate Invoices
 - What the site does: Small-business invoice creation, client records, saved PDF export, manual payment-status tracking, and Free-to-Pro subscription billing.
-- Current estimated completion: 87% beta readiness; 62% production readiness.
-- Beta readiness score: 87/100
-- Production readiness score: 62/100
+- Current estimated completion: 88% beta readiness; 63% production readiness.
+- Beta readiness score: 88/100
+- Production readiness score: 63/100
 - Biggest strength: Coherent lightweight MVP with real auth, client/invoice data, saved PDFs, and Stripe billing routes in local source.
 - Biggest weakness: Local source and live production are not the same; production currently returns `404` for current legal and billing routes.
 - Biggest launch blocker: Current launch-critical files are untracked/undeployed, so production cannot prove legal pages, billing APIs, or Stripe webhooks.
@@ -77,7 +77,7 @@ See `STACK_INVENTORY.md`.
 |---|---:|---|---|---|
 | Product Functionality | 9/15 | Needs Work | Core routes and API exist | Edit/delete, send/payment links, full QA. |
 | Code Quality / Architecture | 6.5/10 | Needs Work | Build/lint/typecheck/unit tests pass | Server-side data loading, broader tests, remove live drift. |
-| Security | 8.5/15 | Needs Work | RLS, webhook signatures, server keys, atomic webhook event claim | Atomic invoice flag not live, CSRF/rate limits, CSP. |
+| Security | 9/15 | Needs Work | RLS, webhook signatures, server keys, atomic webhook event claim, enforced CSP baseline | Atomic invoice flag not live, preview CSP/browser QA, broader monitoring. |
 | Authentication / Authorization | 5/8 | Needs Work | `proxy.ts`, Supabase SSR clients | Deploy cookie fix, add E2E auth tests. |
 | Database / Data Integrity | 4.8/8 | Dangerous | RLS/schema exist; app-level input limits added; atomic invoice migration prepared | Apply/verify RPC migration, DB constraints, remaining indexes. |
 | Payment / Financial Flow | 4.3/8 | Dangerous | Stripe routes exist; duplicate webhook claiming is unit-tested | Live Stripe config, paid-flow QA, and production deploy. |
@@ -89,7 +89,7 @@ See `STACK_INVENTORY.md`.
 | Legal / Privacy / Compliance | 2/4 | Dangerous | Local pages exist | Production deploy and policy expansion. |
 | Testing Coverage | 2.9/4 | Needs Work | Vitest unit tests for billing/env/invoice/security/Stripe webhook/billing/invoice route guardrails, duplicate webhook claiming, atomic invoice RPC flag path, plus signed webhook route fixture | Add authenticated E2E/RLS tests, preview Stripe replay, and live migration concurrency tests. |
 
-Current beta-readiness percentage: 87%. Current production-readiness percentage: 62%. Confidence: high for local code/build/test findings; medium for live Supabase/Stripe state because hosted database and live Stripe are not fully proven in this pass.
+Current beta-readiness percentage: 88%. Current production-readiness percentage: 63%. Confidence: high for local code/build/test findings; medium for live Supabase/Stripe state because hosted database and live Stripe are not fully proven in this pass.
 
 ## 8. Critical Blockers
 
@@ -101,7 +101,7 @@ Current beta-readiness percentage: 87%. Current production-readiness percentage:
 6. No automated auth/RLS/E2E tests; unit tests now cover pure helper, API wrapper, Stripe webhook helper, signed webhook route fixture, and guardrail logic only.
 7. Legal pages are not live and missing policy depth.
 8. No monitoring/error tracking/uptime alerts.
-9. CSP and broader production abuse monitoring are not fully tested.
+9. CSP browser QA and broader production abuse monitoring are not fully tested.
 10. Authenticated preview QA still required.
 
 ## 9. Security Findings
@@ -187,6 +187,7 @@ Issues found: untracked critical files before release stabilization, stock READM
 | `lib/stripe-webhook.ts` | Claims Stripe event IDs before entitlement sync and releases the claim on sync failure | Removes the local check-then-insert duplicate webhook race | Run duplicate webhook unit tests and Stripe replay in preview. |
 | `tests/stripe-webhook.test.ts`, `tests/stripe-webhook-route.test.ts` | Added duplicate-claim and claim-release coverage | Proves duplicate event delivery does not sync entitlement twice in local tests | Run `npm run test:unit -- tests/stripe-webhook.test.ts tests/stripe-webhook-route.test.ts`. |
 | `app/not-found.tsx`, `app/error.tsx`, `app/globals.css`, `scripts/smoke-local.mjs` | Added branded 404/global error fallbacks and smoke coverage for unknown routes | Replaces default framework failure pages with professional recovery paths | Run `npm run smoke` and visit an unknown URL. |
+| `next.config.ts`, `scripts/smoke-local.mjs` | Added enforced CSP baseline and smoke header assertion | Reduces XSS/frame/object/plugin blast radius and makes the policy deploy-checkable | Run `npm run smoke`; browser-test auth/PDF/Stripe flows on preview. |
 
 ## 22. Fixes Not Implemented Yet
 
@@ -195,7 +196,7 @@ Issues found: untracked critical files before release stabilization, stock READM
 | Atomic quota/invoice numbering migration live application | Migration is prepared locally, but hosted DB writes require owner approval and environment-specific verification | High | Apply to preview first, enable `INVOICE_CREATE_RPC_ENABLED=true`, test concurrency, then repeat for production after approval. |
 | Live Stripe setup | Requires owner approval for real money | Critical | Configure live Stripe and run controlled live test. |
 | Authenticated E2E/API/RLS tests | Requires browser/database/test-user setup | High | Add Playwright/API/RLS tests in a later phase. |
-| CSP | Needs tested allowlist for Supabase/Stripe/PDF behavior | Medium | Add after browser QA. |
+| CSP browser QA | CSP header is implemented locally, but auth/PDF/Stripe browser flows must be checked on preview | Medium | Run preview browser QA with devtools open and adjust policy if any required flow is blocked. |
 | Production deploy | User did not explicitly approve production deploy in this turn | Critical | Approve deploy after docs/fixes review. |
 | Monitoring | Requires service choice/account | Medium | Pick Sentry/PostHog/Uptime provider. |
 
@@ -218,7 +219,7 @@ Issues found: untracked critical files before release stabilization, stock READM
 |---|---|---|---|---|---|---|
 | P0 | Stripe live | Medium | Critical | High | 2-4 hrs | Live checkout/webhook/portal/cancel verified. |
 | P0 | Production deploy | Medium | Critical | High | 1-2 hrs | Production legal/API routes return expected codes. |
-| P1 | Security hardening | Medium | High | Medium | 4-8 hrs | Rate limit/origin/CSP active and tested. |
+| P1 | Security hardening | Medium | High | Medium | 3-6 hrs | Rate limit/origin/CSP stay active after preview browser QA and production monitoring is configured. |
 | P1 | Monitoring | Medium | High | Low | 2-4 hrs | Errors and uptime notify owner. |
 | P1 | RLS/API tests | Medium | High | Medium | 4-8 hrs | Cross-user access denied in automated tests. |
 
@@ -268,6 +269,6 @@ npm run start
 
 ## 25. Final Recommendation
 
-This site is not beta-ready today until the current working tree is pushed/deployed to preview and authenticated QA passes. It is not production-ready. Current score: 87/100 beta readiness, 62/100 production readiness.
+This site is not beta-ready today until the current working tree is pushed/deployed to preview and authenticated QA passes. It is not production-ready. Current score: 88/100 beta readiness, 63/100 production readiness.
 
 Next action: resolve GitHub push credentials, deploy current source to preview, run the full authenticated QA checklist, apply and verify the atomic invoice migration on preview, then address live Stripe blockers before any public paid launch.
