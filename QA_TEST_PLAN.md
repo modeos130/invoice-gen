@@ -2,7 +2,7 @@
 
 ## Current Testing State
 
-Vitest unit testing is installed for pure helper coverage. Current automated checks include lint, TypeScript, production build, static readiness guard, unit tests, and route smoke checks. Unit tests cover billing helpers, billing route response/session builders, server environment helpers, invoice validation, request-security helpers, Stripe webhook processing helpers, and the static readiness guard. Integration, API, authenticated E2E, accessibility, visual regression, signed Stripe webhook fixture, and Supabase RLS tests are still missing.
+Vitest unit testing is installed for pure helper and selected API wrapper coverage. Current automated checks include lint, TypeScript, production build, static readiness guard, unit tests, and route smoke checks. Unit tests cover billing helpers, billing route response/session builders, server environment helpers, invoice validation, request-security helpers, Stripe webhook processing helpers, signed Stripe webhook route fixtures, and the static readiness guard. Broader API integration, authenticated E2E, accessibility, visual regression, and Supabase RLS tests are still missing.
 
 ## Minimum Tests Required Before Beta
 
@@ -36,7 +36,7 @@ Vitest unit testing is installed for pure helper coverage. Current automated che
 - API route tests: Vitest with mocked Supabase/Stripe clients
 - E2E: Playwright
 - Accessibility: Playwright + axe
-- Stripe webhook fixtures: Stripe CLI or saved signed fixture harness
+- Stripe webhook fixtures: Vitest-signed route fixture for local signature acceptance; Stripe CLI preview/live replay still required before launch
 
 ## Commands
 
