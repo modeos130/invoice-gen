@@ -57,6 +57,8 @@ describe('billing route helpers', () => {
   });
 
   it('builds Stripe portal session params using the request origin in local mode', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', '');
+
     expect(buildBillingPortalSessionParams('cus_test', 'http://localhost:3028')).toEqual({
       customer: 'cus_test',
       return_url: 'http://localhost:3028/dashboard',
@@ -64,6 +66,8 @@ describe('billing route helpers', () => {
   });
 
   it('builds Stripe checkout session params with subscription metadata', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', '');
+
     const params = buildProCheckoutSessionParams({
       customerId: 'cus_test',
       userId: 'user_test',
