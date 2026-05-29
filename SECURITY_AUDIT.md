@@ -25,7 +25,7 @@ Security is acceptable for controlled internal testing after the current code is
 | Finding | Evidence | Risk | Required fix |
 |---|---|---|---|
 | No app-level CSRF/origin/rate limiting on POST routes | `app/api/invoices/route.ts`, `app/api/billing/*` | Abuse or cross-site form submission risk | Add origin checks and per-user/IP rate limiting. |
-| Webhook idempotency not atomic | `app/api/stripe/webhook/route.ts` checks existing event before processing and inserts after | Duplicate event race | Insert event lock first or use atomic RPC/transaction. |
+| Webhook idempotency not live-proven | `lib/stripe-webhook.ts` now atomically claims events before processing, but production is still stale until pushed/deployed | Duplicate-event protection is not active on production yet | Push/deploy current source and replay duplicate Stripe events in preview/live test mode. |
 | DB-level field limits are still incomplete | App-level invoice/client/line-item limits now exist in `app/api/invoices/route.ts` and UI forms, but DB constraints are still broad `TEXT`/`JSONB` fields | Direct database API usage or future code paths could bypass app limits | Add DB constraints in the approved Supabase migration phase. |
 | CSP missing | `next.config.ts` has baseline headers but no CSP | XSS blast radius higher | Add tested CSP after mapping Supabase/Stripe requirements. |
 | Moderate dependency advisories | `npm audit` reports Next via bundled PostCSS advisory | XSS advisory in dependency chain | Track Next/PostCSS fix; do not force downgrade. |
@@ -41,6 +41,7 @@ Security is acceptable for controlled internal testing after the current code is
 
 - Supabase RLS is enabled for core tables.
 - Stripe webhook signature verification is present.
+- Stripe webhook processing now claims event IDs with an atomic insert before entitlement sync and releases the claim if sync fails.
 - Service-role key usage is server-only in inspected code.
 - Browser Supabase client now uses SSR-compatible auth cookies.
 - Login redirect stays on same-site relative paths.

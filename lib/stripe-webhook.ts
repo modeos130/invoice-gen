@@ -18,6 +18,9 @@ type SelectQuery<T> = {
 type TableClient<T = unknown> = SelectQuery<T> & {
   upsert?(payload: Record<string, unknown>): Promise<{ error?: unknown }>;
   insert?(payload: Record<string, unknown>): Promise<{ error?: unknown }>;
+  delete?(): {
+    eq(column: string, value: string): Promise<{ error?: unknown }>;
+  };
 };
 
 export type StripeWebhookAdminClient = {
@@ -47,6 +50,51 @@ export function subscriptionPeriodEnd(subscription: Stripe.Subscription): string
 export function stripeId(value: string | { id: string } | null | undefined): string | null {
   if (!value) return null;
   return typeof value === 'string' ? value : value.id;
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+
+  const maybeError = error as { code?: unknown; message?: unknown };
+  return (
+    maybeError.code === '23505' ||
+    (typeof maybeError.message === 'string' &&
+      maybeError.message.toLowerCase().includes('duplicate key'))
+  );
+}
+
+async function claimWebhookEvent(
+  event: Stripe.Event,
+  admin: StripeWebhookAdminClient
+): Promise<StripeWebhookResult | null> {
+  const webhookEvents = admin.from('stripe_webhook_events');
+
+  if (!webhookEvents.insert) {
+    throw new Error('Webhook event insert is unavailable');
+  }
+
+  const { error } = await webhookEvents.insert({
+    id: event.id,
+    type: event.type,
+  });
+
+  if (!error) return null;
+
+  if (isUniqueViolation(error)) {
+    return { received: true, duplicate: true };
+  }
+
+  throw error;
+}
+
+async function releaseWebhookEvent(eventId: string, admin: StripeWebhookAdminClient) {
+  const webhookEvents = admin.from('stripe_webhook_events');
+
+  if (!webhookEvents.delete) {
+    return;
+  }
+
+  await webhookEvents.delete().eq('id', eventId);
 }
 
 export async function syncSubscription(
@@ -118,41 +166,24 @@ export async function processStripeWebhookEvent(
   stripe: StripeWebhookProcessor,
   options: SyncSubscriptionOptions = {}
 ): Promise<StripeWebhookResult> {
-  const { data: existingEvent } = await admin
-    .from('stripe_webhook_events')
-    .select('id')
-    .eq('id', event.id)
-    .maybeSingle();
+  const duplicateResult = await claimWebhookEvent(event, admin);
+  if (duplicateResult) return duplicateResult;
 
-  if (existingEvent) {
-    return { received: true, duplicate: true };
-  }
-
-  switch (event.type) {
-    case 'checkout.session.completed':
-      await syncCheckoutSession(event.data.object as Stripe.Checkout.Session, admin, stripe, options);
-      break;
-    case 'customer.subscription.created':
-    case 'customer.subscription.updated':
-    case 'customer.subscription.deleted':
-      await syncSubscription(event.data.object as Stripe.Subscription, admin, options);
-      break;
-    default:
-      break;
-  }
-
-  const webhookEvents = admin.from('stripe_webhook_events');
-
-  if (!webhookEvents.insert) {
-    throw new Error('Webhook event insert is unavailable');
-  }
-
-  const { error } = await webhookEvents.insert({
-    id: event.id,
-    type: event.type,
-  });
-
-  if (error) {
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed':
+        await syncCheckoutSession(event.data.object as Stripe.Checkout.Session, admin, stripe, options);
+        break;
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
+        await syncSubscription(event.data.object as Stripe.Subscription, admin, options);
+        break;
+      default:
+        break;
+    }
+  } catch (error) {
+    await releaseWebhookEvent(event.id, admin);
     throw error;
   }
 

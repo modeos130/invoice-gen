@@ -41,16 +41,24 @@ function fakeEvent(type: string, object: unknown, id = 'evt_test'): Stripe.Event
   } as Stripe.Event;
 }
 
+function uniqueViolationError(): Error & { code: string } {
+  return Object.assign(new Error('duplicate key value violates unique constraint'), {
+    code: '23505',
+  });
+}
+
 function createAdmin(options: {
-  existingEvent?: boolean;
   lookupUserId?: string | null;
   upsertError?: Error | null;
   insertError?: Error | null;
+  eventInsertError?: Error | null;
+  deleteError?: Error | null;
 } = {}) {
   const calls = {
     lookups: [] as Array<{ table: string; column: string; value: string }>,
     upserts: [] as Array<{ table: string; payload: Record<string, unknown> }>,
     inserts: [] as Array<{ table: string; payload: Record<string, unknown> }>,
+    deletes: [] as Array<{ table: string; column: string; value: string }>,
   };
 
   const client: StripeWebhookAdminClient = {
@@ -65,7 +73,7 @@ function createAdmin(options: {
 
                   if (table === 'stripe_webhook_events') {
                     return {
-                      data: options.existingEvent ? { id: value } : null,
+                      data: null,
                       error: null,
                     };
                   }
@@ -89,7 +97,18 @@ function createAdmin(options: {
         },
         async insert(payload: Record<string, unknown>) {
           calls.inserts.push({ table, payload });
+          if (table === 'stripe_webhook_events') {
+            return { error: options.eventInsertError ?? null };
+          }
           return { error: options.insertError ?? null };
+        },
+        delete() {
+          return {
+            async eq(column: string, value: string) {
+              calls.deletes.push({ table, column, value });
+              return { error: options.deleteError ?? null };
+            },
+          };
         },
       };
     },
@@ -186,7 +205,7 @@ describe('Stripe webhook helpers', () => {
   });
 
   it('does not reprocess duplicate Stripe events', async () => {
-    const { client, calls } = createAdmin({ existingEvent: true });
+    const { client, calls } = createAdmin({ eventInsertError: uniqueViolationError() });
 
     const result = await processStripeWebhookEvent(
       fakeEvent('customer.subscription.updated', fakeSubscription()),
@@ -196,7 +215,12 @@ describe('Stripe webhook helpers', () => {
 
     expect(result).toEqual({ received: true, duplicate: true });
     expect(calls.upserts).toHaveLength(0);
-    expect(calls.inserts).toHaveLength(0);
+    expect(calls.inserts).toEqual([
+      {
+        table: 'stripe_webhook_events',
+        payload: { id: 'evt_test', type: 'customer.subscription.updated' },
+      },
+    ]);
   });
 
   it('records a processed event after entitlement sync succeeds', async () => {
@@ -218,8 +242,8 @@ describe('Stripe webhook helpers', () => {
     ]);
   });
 
-  it('fails webhook processing when the processed-event insert fails', async () => {
-    const { client } = createAdmin({ insertError: new Error('insert failed') });
+  it('fails webhook processing when the event claim insert fails', async () => {
+    const { client, calls } = createAdmin({ eventInsertError: new Error('insert failed') });
 
     await expect(
       processStripeWebhookEvent(
@@ -228,5 +252,32 @@ describe('Stripe webhook helpers', () => {
         { subscriptions: { retrieve: vi.fn() } }
       )
     ).rejects.toThrow('insert failed');
+    expect(calls.upserts).toHaveLength(0);
+  });
+
+  it('releases a claimed event when entitlement sync fails', async () => {
+    const { client, calls } = createAdmin({ upsertError: new Error('upsert failed') });
+
+    await expect(
+      processStripeWebhookEvent(
+        fakeEvent('customer.subscription.updated', fakeSubscription(), 'evt_sync_fail'),
+        client,
+        { subscriptions: { retrieve: vi.fn() } }
+      )
+    ).rejects.toThrow('upsert failed');
+
+    expect(calls.inserts).toEqual([
+      {
+        table: 'stripe_webhook_events',
+        payload: { id: 'evt_sync_fail', type: 'customer.subscription.updated' },
+      },
+    ]);
+    expect(calls.deletes).toEqual([
+      {
+        table: 'stripe_webhook_events',
+        column: 'id',
+        value: 'evt_sync_fail',
+      },
+    ]);
   });
 });

@@ -4,7 +4,7 @@ import Stripe from 'stripe';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type TestState = {
-  existingEvent: boolean;
+  eventInsertError: (Error & { code?: string }) | null;
   signature: string | null;
   inserts: Array<{ table: string; payload: Record<string, unknown> }>;
 };
@@ -15,6 +15,12 @@ const stripe = new Stripe('sk_test_phase10', {
 });
 
 let state: TestState;
+
+function uniqueViolationError(): Error & { code: string } {
+  return Object.assign(new Error('duplicate key value violates unique constraint'), {
+    code: '23505',
+  });
+}
 
 function createEventPayload(id: string, type = 'phase10.test'): string {
   return JSON.stringify({
@@ -61,7 +67,7 @@ beforeEach(() => {
   vi.resetModules();
   vi.stubEnv('STRIPE_WEBHOOK_SECRET', webhookSecret);
   state = {
-    existingEvent: false,
+    eventInsertError: null,
     signature: null,
     inserts: [],
   };
@@ -84,11 +90,11 @@ beforeEach(() => {
         return {
           select() {
             return {
-              eq(_column: string, value: string) {
+              eq() {
                 return {
                   async maybeSingle() {
                     return {
-                      data: state.existingEvent ? { id: value } : null,
+                      data: null,
                       error: null,
                     };
                   },
@@ -98,7 +104,14 @@ beforeEach(() => {
           },
           async insert(payload: Record<string, unknown>) {
             state.inserts.push({ table, payload });
-            return { error: null };
+            return { error: state.eventInsertError };
+          },
+          delete() {
+            return {
+              async eq() {
+                return { error: null };
+              },
+            };
           },
         };
       },
@@ -152,15 +165,23 @@ describe('Stripe webhook route', () => {
     ]);
   });
 
-  it('accepts a signed duplicate fixture without recording it again', async () => {
+  it('accepts a signed duplicate fixture without syncing it again', async () => {
     const payload = createEventPayload('evt_duplicate_fixture');
     state.signature = signPayload(payload);
-    state.existingEvent = true;
+    state.eventInsertError = uniqueViolationError();
 
     const response = await postWebhook(payload);
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ received: true, duplicate: true });
-    expect(state.inserts).toHaveLength(0);
+    expect(state.inserts).toEqual([
+      {
+        table: 'stripe_webhook_events',
+        payload: {
+          id: 'evt_duplicate_fixture',
+          type: 'phase10.test',
+        },
+      },
+    ]);
   });
 });

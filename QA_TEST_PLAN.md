@@ -2,7 +2,7 @@
 
 ## Current Testing State
 
-Vitest unit testing is installed for pure helper and selected API wrapper coverage. Current automated checks include lint, TypeScript, production build, static readiness guard, unit tests, and route smoke checks. Unit tests cover billing helpers, billing route response/session builders, server environment helpers, invoice validation, request-security helpers, Stripe webhook processing helpers, signed Stripe webhook route fixtures, billing API route wrappers, invoice API route wrappers, the feature-flagged atomic invoice RPC path, and the static readiness guard. Authenticated E2E, accessibility, visual regression, preview Stripe replay, Supabase RLS tests, and live verification of the atomic invoice migration are still missing.
+Vitest unit testing is installed for pure helper and selected API wrapper coverage. Current automated checks include lint, TypeScript, production build, static readiness guard, unit tests, and route smoke checks. Unit tests cover billing helpers, billing route response/session builders, server environment helpers, invoice validation, request-security helpers, Stripe webhook processing helpers, signed Stripe webhook route fixtures, atomic webhook duplicate-event claiming, billing API route wrappers, invoice API route wrappers, the feature-flagged atomic invoice RPC path, and the static readiness guard. Authenticated E2E, accessibility, visual regression, preview Stripe replay, Supabase RLS tests, and live verification of the atomic invoice migration are still missing.
 
 ## Minimum Tests Required Before Beta
 
@@ -26,7 +26,7 @@ Vitest unit testing is installed for pure helper and selected API wrapper covera
 | Stripe webhook | `checkout.session.completed` and subscription events | Verified webhook grants Pro entitlement server-side. |
 | Billing portal | Pro user opens portal | Portal opens and returns to dashboard. |
 | Cancellation/downgrade | Subscription canceled | Webhook removes Pro entitlement. |
-| Idempotency | Duplicate Stripe event | Event is processed once. |
+| Idempotency | Duplicate Stripe event | Event claim insert prevents double entitlement sync; duplicate replay returns `{ received: true, duplicate: true }`. |
 | RLS | Two users with clients/invoices | Neither user can read/update the other user's data. |
 | Error handling | Bad auth, bad payload, missing env, Stripe failure | User gets safe message; logs contain useful server-side detail. |
 | Accessibility | Keyboard-only auth/dashboard/invoice flows | Focus visible, no keyboard traps, form errors announced. |
@@ -37,7 +37,7 @@ Vitest unit testing is installed for pure helper and selected API wrapper covera
 - API route tests: Vitest with mocked Supabase/Stripe clients
 - E2E: Playwright
 - Accessibility: Playwright + axe
-- Stripe webhook fixtures: Vitest-signed route fixture for local signature acceptance; Stripe CLI preview/live replay still required before launch
+- Stripe webhook fixtures: Vitest-signed route fixture for local signature acceptance and duplicate-event claiming; Stripe CLI preview/live replay still required before launch
 
 ## Commands
 
