@@ -62,6 +62,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     .maybeSingle();
 
   if (error) {
+    console.error('Invoice archive update failed', {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
     return NextResponse.json({ error: 'Invoice archive update failed.' }, { status: 500 });
   }
 

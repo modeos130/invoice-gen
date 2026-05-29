@@ -62,6 +62,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     .maybeSingle();
 
   if (error) {
+    console.error('Client archive update failed', {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
     return NextResponse.json({ error: 'Client archive update failed.' }, { status: 500 });
   }
 

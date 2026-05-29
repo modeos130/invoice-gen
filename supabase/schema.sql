@@ -86,6 +86,9 @@ CREATE POLICY "Users manage own invoices"
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
+GRANT SELECT, INSERT, UPDATE ON clients TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON invoices TO authenticated;
+
 DROP POLICY IF EXISTS "Users view own billing profile" ON billing_profiles;
 CREATE POLICY "Users view own billing profile"
   ON billing_profiles
