@@ -16,8 +16,8 @@ Security is acceptable for controlled internal testing after authenticated QA pa
 
 | Finding | Evidence | Risk | Required fix |
 |---|---|---|---|
-| Free quota enforcement is non-atomic by default | `app/api/invoices/route.ts` still falls back to count-then-insert unless `INVOICE_CREATE_RPC_ENABLED=true`; `supabase/migrations/20260529090606_atomic_invoice_create.sql` prepares the RPC | Concurrent requests can exceed free quota until the migration is applied and flag enabled | Apply the migration in preview, verify concurrency, then enable the flag. |
-| Invoice numbering is race-prone by default | Existing fallback generates invoice number from count; prepared `invoice_counters` table/RPC is not live-enabled yet | Duplicate number under concurrency until RPC path is live | Apply and verify the per-user counter/RPC migration. |
+| Free quota enforcement is non-atomic by default | `app/api/invoices/route.ts` still falls back to count-then-insert unless `INVOICE_CREATE_RPC_ENABLED=true`; hosted atomic RPC migrations are applied | Concurrent requests can exceed free quota until authenticated QA verifies and enables the RPC flag | Run authenticated invoice/concurrency QA, then enable `INVOICE_CREATE_RPC_ENABLED=true`. |
+| Invoice numbering is race-prone by default | Existing fallback generates invoice number from count; hosted `invoice_counters` table/RPC now exists but is not live-enabled | Duplicate number under concurrency until RPC path is enabled | Verify authenticated invoice creation through the RPC path and enable the flag. |
 | No automated RLS/security tests | No test framework or RLS test suite | Cross-user regressions may ship unnoticed | Add RLS tests for clients, invoices, billing profiles. |
 
 ## Medium Findings

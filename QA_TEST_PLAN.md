@@ -2,7 +2,7 @@
 
 ## Current Testing State
 
-Vitest unit testing is installed for pure helper and selected API wrapper coverage. Current automated checks include lint, TypeScript, production build, static readiness guard, unit tests, and route smoke checks. Unit tests cover billing helpers, billing route response/session builders, server environment helpers, invoice validation, request-security helpers, Stripe webhook processing helpers, signed Stripe webhook route fixtures, atomic webhook duplicate-event claiming, billing API route wrappers, invoice API route wrappers, the feature-flagged atomic invoice RPC path, and the static readiness guard. Authenticated E2E, accessibility, visual regression, preview Stripe replay, Supabase RLS tests, and live verification of the atomic invoice migration are still missing.
+Vitest unit testing is installed for pure helper and selected API wrapper coverage. Current automated checks include lint, TypeScript, production build, static readiness guard, unit tests, and route smoke checks. Unit tests cover billing helpers, billing route response/session builders, server environment helpers, invoice validation, request-security helpers, Stripe webhook processing helpers, signed Stripe webhook route fixtures, atomic webhook duplicate-event claiming, billing API route wrappers, invoice API route wrappers, the feature-flagged atomic invoice RPC path, and the static readiness guard. Authenticated E2E, accessibility, visual regression, preview Stripe replay, Supabase RLS tests, and authenticated QA of the live atomic invoice RPC path are still missing.
 
 ## Minimum Tests Required Before Beta
 
@@ -13,7 +13,7 @@ Vitest unit testing is installed for pure helper and selected API wrapper covera
 | Invoices | Create invoice with existing/new client | Server saves invoice, dashboard shows it, detail route opens. |
 | PDF | Download saved invoice PDF | Download is only available after saved invoice route; unsaved invoice cannot bypass quota. |
 | Free limit | Create 3 invoices as free user, attempt 4th | Fourth create returns upgrade path and no invoice is inserted. |
-| Atomic invoice create | Apply `20260529090606_atomic_invoice_create.sql`, enable `INVOICE_CREATE_RPC_ENABLED=true`, run concurrent invoice creates | Concurrent creates cannot exceed quota or duplicate invoice numbers. |
+| Atomic invoice create | Enable `INVOICE_CREATE_RPC_ENABLED=true` in a controlled environment and run concurrent invoice creates | Concurrent creates cannot exceed quota or duplicate invoice numbers. |
 | Billing status | Dashboard status for free/pro | Correct usage/plan appears from `/api/billing/status`. |
 | Public routes | `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`, `/privacy`, `/refunds` | All return `200` on preview. |
 | 404 fallback | Unknown route such as `/definitely-missing` | Returns `404` with the branded not-found page. |
@@ -67,4 +67,4 @@ npm run test:a11y
 
 ## Database Migration QA
 
-The atomic invoice migration is committed as `supabase/migrations/20260529090606_atomic_invoice_create.sql` and mirrored in `supabase/schema.sql`. It must be applied to a preview Supabase database and verified before setting `INVOICE_CREATE_RPC_ENABLED=true` in any deployed environment. Until that flag is enabled, `/api/invoices` continues to use the existing non-atomic fallback path.
+The atomic invoice migrations are committed as `supabase/migrations/20260529090606_atomic_invoice_create.sql` and `supabase/migrations/20260529121916_grant_create_invoice_atomic.sql`, with the resulting schema mirrored in `supabase/schema.sql`. They are applied to the linked hosted Supabase project. Until `INVOICE_CREATE_RPC_ENABLED=true` is enabled and authenticated QA passes, `/api/invoices` continues to use the existing non-atomic fallback path.

@@ -178,35 +178,3 @@ BEGIN
   RETURN NEXT;
 END;
 $$;
-
-REVOKE ALL ON FUNCTION public.create_invoice_atomic(
-  UUID,
-  TEXT,
-  TEXT,
-  TEXT,
-  JSONB,
-  NUMERIC,
-  NUMERIC,
-  NUMERIC,
-  NUMERIC,
-  TEXT,
-  DATE,
-  DATE,
-  INTEGER
-) FROM PUBLIC;
-
-GRANT EXECUTE ON FUNCTION public.create_invoice_atomic(
-  UUID,
-  TEXT,
-  TEXT,
-  TEXT,
-  JSONB,
-  NUMERIC,
-  NUMERIC,
-  NUMERIC,
-  NUMERIC,
-  TEXT,
-  DATE,
-  DATE,
-  INTEGER
-) TO authenticated;

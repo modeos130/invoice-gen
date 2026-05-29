@@ -6,12 +6,12 @@ All file paths are under `/Users/booman/projects/invoice-gen` unless noted. `inv
 
 - Site name: I Hate Invoices
 - What the site does: Small-business invoice creation, client records, saved PDF export, manual payment-status tracking, and Free-to-Pro subscription billing.
-- Current estimated completion: 90% beta readiness; 66% production readiness.
-- Beta readiness score: 90/100
-- Production readiness score: 66/100
+- Current estimated completion: 92% beta readiness; 68% production readiness.
+- Beta readiness score: 92/100
+- Production readiness score: 68/100
 - Biggest strength: Current `main` is pushed, CI-passing, deployed to production, and route-smoke-tested on both `ihateinvoices.com` domains.
-- Biggest weakness: Authenticated user flows, Supabase migration state, and production Stripe env/live billing are not proven.
-- Biggest launch blocker: Production Stripe env values are missing and the Supabase project `stjycgosnmtbhuuagunq` is not available through the connected Supabase account.
+- Biggest weakness: Authenticated user flows, sign-in redirect/page consistency, and production Stripe env/live billing are not proven.
+- Biggest launch blocker: Sign-in is reported to reach an old page, and production Stripe env values are still missing.
 - Overall recommendation: Internal testing only. Beta-ready after fixes; public launch-ready after more fixes.
 
 Validation completed in this pass: `npm run test:unit` passed, `npm run readiness` passed, `npm run lint` passed, `npm run typecheck` passed, `npm run build` passed, and a local production server on port `3028` returned `/` `200`, `/terms` `200`, `/robots.txt` `200`, `/sitemap.xml` `200`, unauthenticated `/api/billing/status` `401`, unsigned `/api/stripe/webhook` `400`, and invalid-origin `/api/invoices` `403`.
@@ -43,9 +43,9 @@ See `STACK_INVENTORY.md`.
 | `/refunds` | Refund/cancellation policy | Public | `lib/company.ts` | Deployed and smoke-tested | Stripe portal must be proven | Billing QA. |
 | `/dashboard` | Billing summary and invoice list | Protected | Supabase invoices, `/api/billing/status` | Builds | Unbounded reads; mobile table; live API drift | Add pagination/tests. |
 | `/clients` | Client list and create | Protected | Supabase clients/invoices | Builds | No edit/delete; unbounded counts | Add CRUD/pagination later. |
-| `/invoice/new` | Create invoice | Protected | Supabase clients, `/api/invoices` | Builds; unsaved PDF bypass fixed; feature-flagged atomic RPC prepared | Atomic quota is not live until migration is applied and flag enabled | Apply and verify DB migration/RPC. |
+| `/invoice/new` | Create invoice | Protected | Supabase clients, `/api/invoices` | Builds; unsaved PDF bypass fixed; hosted atomic RPC exists | Atomic quota is not live until the flag is enabled and QA passes | Enable and verify RPC path in controlled QA. |
 | `/invoice/[id]` | Saved invoice detail/PDF/status | Protected | Supabase invoice | Builds | No edit/delete; status update client-side | Add server action/API later. |
-| `/api/invoices` | Save invoices and enforce free limit | Auth API | Supabase billing, clients, invoices, optional `create_invoice_atomic` RPC | Builds; RPC path unit-tested behind `INVOICE_CREATE_RPC_ENABLED` | Hosted DB migration not applied/verified | Apply migration, enable flag, test concurrency. |
+| `/api/invoices` | Save invoices and enforce free limit | Auth API | Supabase billing, clients, invoices, optional `create_invoice_atomic` RPC | Builds; RPC path unit-tested and hosted migration applied | RPC flag remains off until authenticated QA | Enable flag in controlled QA, test invoice creation/concurrency. |
 | `/api/billing/status` | Plan and usage status | Auth API | Supabase billing/invoices | Deployed; unauth smoke returns `401` | Authenticated status untested | Authenticated QA. |
 | `/api/billing/checkout` | Stripe Checkout | Auth API | Supabase admin, Stripe | Deployed; unauth smoke returns `401` | Production Stripe env not configured | Add live env and test. |
 | `/api/billing/portal` | Stripe Customer Portal | Auth API | Supabase admin, Stripe | Builds | Portal not production-proven | Configure and test. |
@@ -79,7 +79,7 @@ See `STACK_INVENTORY.md`.
 | Code Quality / Architecture | 6.5/10 | Needs Work | Build/lint/typecheck/unit tests pass | Server-side data loading, broader tests, remove live drift. |
 | Security | 9/15 | Needs Work | RLS, webhook signatures, server keys, atomic webhook event claim, enforced CSP baseline | Atomic invoice flag not live, preview CSP/browser QA, broader monitoring. |
 | Authentication / Authorization | 5/8 | Needs Work | `proxy.ts`, Supabase SSR clients | Deploy cookie fix, add E2E auth tests. |
-| Database / Data Integrity | 4.8/8 | Dangerous | RLS/schema exist; app-level input limits added; atomic invoice migration prepared | Apply/verify RPC migration, DB constraints, remaining indexes. |
+| Database / Data Integrity | 5.4/8 | Needs Work | RLS/schema exist; app-level input limits added; atomic invoice migration applied and RPC probe verified | Enable/verify RPC path, DB constraints, remaining indexes. |
 | Payment / Financial Flow | 4.8/8 | Dangerous | Stripe routes are deployed; duplicate webhook claiming is unit-tested | Production Stripe env and paid-flow QA. |
 | Error Handling / Reliability | 4.7/7 | Needs Work | Basic route errors plus branded 404/global error fallback | Safe logs, retries, deeper failure-mode E2E. |
 | UX/UI / Responsive Design | 5/7 | Good | Coherent public/auth/app UI | Mobile tables/forms, first-run checklist. |
@@ -89,14 +89,14 @@ See `STACK_INVENTORY.md`.
 | Legal / Privacy / Compliance | 2.5/4 | Dangerous | Legal pages deployed | Policy expansion and final review. |
 | Testing Coverage | 2.9/4 | Needs Work | Vitest unit tests for billing/env/invoice/security/Stripe webhook/billing/invoice route guardrails, duplicate webhook claiming, atomic invoice RPC flag path, plus signed webhook route fixture | Add authenticated E2E/RLS tests, preview Stripe replay, and live migration concurrency tests. |
 
-Current beta-readiness percentage: 90%. Current production-readiness percentage: 66%. Confidence: high for code/build/CI/route-smoke findings; medium for authenticated Supabase/Stripe state because hosted database and live Stripe are not fully proven in this pass.
+Current beta-readiness percentage: 92%. Current production-readiness percentage: 68%. Confidence: high for code/build/CI/route-smoke findings and hosted migration presence; medium for authenticated Supabase/Stripe state because live authenticated flows and live Stripe are not fully proven in this pass.
 
 ## 8. Critical Blockers
 
-1. Production Stripe live Product/Price/webhook/portal env is not configured/proven.
-2. Supabase production migration state must be verified, but the connected Supabase account does not expose project `stjycgosnmtbhuuagunq`.
+1. Sign-in is reported to reach an old page and all auth redirects/pages must be swept.
+2. Production Stripe live Product/Price/webhook/portal env is not configured/proven.
 3. Authenticated signup/login/invoice/PDF QA is still required.
-4. Free invoice quota and invoice numbering have a prepared atomic path, but it is not applied or live-enabled.
+4. Free invoice quota and invoice numbering have a hosted atomic path, but it is not live-enabled.
 5. No automated auth/RLS/E2E tests; unit tests now cover pure helper, API wrapper, Stripe webhook helper, signed webhook route fixture, and guardrail logic only.
 6. Legal pages are live but still need final policy review/depth.
 7. Production paid flow has not been exercised with owner approval.
@@ -118,7 +118,7 @@ Stripe Checkout, Customer Portal, and webhook code are deployed. The webhook ver
 
 ## 12. Database / Data Findings
 
-Tables in source: `clients`, `invoices`, `billing_profiles`, `stripe_webhook_events`, and prepared `invoice_counters`. RLS is enabled in source. Basic app-level input limits now exist for invoice creation and matching UI fields. The migration `supabase/migrations/20260529090606_atomic_invoice_create.sql` prepares a per-user counter and `create_invoice_atomic` RPC, and `/api/invoices` can use it behind `INVOICE_CREATE_RPC_ENABLED=true`. Stripe webhook event claiming now uses the existing `stripe_webhook_events` primary key before entitlement sync. Key gaps remain: the connected Supabase account does not expose the app's `stjycgosnmtbhuuagunq` project, the hosted database has not applied or verified the atomic invoice migration, fallback invoice creation remains count-based while the flag is off, invoice totals and string lengths still need DB constraints, and composite indexes/ownership constraints still need a deeper migration pass.
+Tables in source and hosted project: `clients`, `invoices`, `billing_profiles`, `stripe_webhook_events`, and `invoice_counters`. RLS is enabled in source. Basic app-level input limits now exist for invoice creation and matching UI fields. The migrations through `supabase/migrations/20260529121916_grant_create_invoice_atomic.sql` are applied to the linked hosted project; REST returns `HTTP 200` for `invoice_counters`, and an unauthenticated RPC probe returns `403 Unauthorized`. Stripe webhook event claiming now uses the existing `stripe_webhook_events` primary key before entitlement sync. Key gaps remain: fallback invoice creation remains count-based while `INVOICE_CREATE_RPC_ENABLED` is off, authenticated RPC/concurrency QA is still required before enabling the flag, invoice totals and string lengths still need DB constraints, and composite indexes/ownership constraints still need a deeper migration pass.
 
 Required migrations need approval before live application.
 
@@ -181,8 +181,8 @@ Issues found and partly resolved: formerly unpushed critical files, stock README
 | `app/robots.ts`, `app/sitemap.ts` | Added crawl controls and sitemap | SEO/readiness baseline | Visit `/robots.txt`, `/sitemap.xml`. |
 | `package.json` | Added `typecheck` and `verify` scripts | Gives repeatable validation commands | Run `npm run verify`. |
 | Docs | Added README, env template, launch/security/QA/stack/punch-list/report docs | Owner/developer handoff | Open docs in repo. |
-| `supabase/migrations/20260529090606_atomic_invoice_create.sql`, `supabase/schema.sql` | Added prepared `invoice_counters` table and `create_invoice_atomic` RPC | Creates the DB-side path needed for atomic quota checks and invoice numbering | Apply to preview Supabase, then test concurrent invoice creates. |
-| `app/api/invoices/route.ts`, `.env.example` | Added `INVOICE_CREATE_RPC_ENABLED` feature flag and RPC integration path | Lets the app keep the known fallback until the hosted migration is verified | Keep flag `false`; enable only after migration QA. |
+| `supabase/migrations/20260529090606_atomic_invoice_create.sql`, `supabase/migrations/20260529121916_grant_create_invoice_atomic.sql`, `supabase/schema.sql` | Added and applied hosted `invoice_counters` table and `create_invoice_atomic` RPC | Creates the DB-side path needed for atomic quota checks and invoice numbering | Enable the flag only during controlled authenticated QA, then test concurrent invoice creates. |
+| `app/api/invoices/route.ts`, `.env.example` | Added `INVOICE_CREATE_RPC_ENABLED` feature flag and RPC integration path | Lets the app keep the known fallback until authenticated migration QA is complete | Keep flag unset/false; enable only after authenticated QA. |
 | `tests/invoices-api-route.test.ts` | Added route-wrapper tests for the atomic RPC success and free-limit error paths | Protects the feature-flagged integration from regressions | Run `npm run test:unit`. |
 | `lib/stripe-webhook.ts` | Claims Stripe event IDs before entitlement sync and releases the claim on sync failure | Removes the local check-then-insert duplicate webhook race | Run duplicate webhook unit tests and Stripe replay in preview. |
 | `tests/stripe-webhook.test.ts`, `tests/stripe-webhook-route.test.ts` | Added duplicate-claim and claim-release coverage | Proves duplicate event delivery does not sync entitlement twice in local tests | Run `npm run test:unit -- tests/stripe-webhook.test.ts tests/stripe-webhook-route.test.ts`. |
@@ -194,11 +194,11 @@ Issues found and partly resolved: formerly unpushed critical files, stock README
 
 | Task | Reason not implemented | Risk | Required action |
 |---|---|---|---|
-| Atomic quota/invoice numbering migration live application | Migration is prepared locally, but hosted DB writes require owner approval and environment-specific verification | High | Apply to preview first, enable `INVOICE_CREATE_RPC_ENABLED=true`, test concurrency, then repeat for production after approval. |
+| Atomic quota/invoice numbering flag enablement | Hosted migration is applied, but the deployed app still uses fallback until the feature flag is enabled | High | Enable `INVOICE_CREATE_RPC_ENABLED=true` in controlled QA, test invoice create and concurrency, then promote deliberately. |
 | Live Stripe setup | Requires owner approval for real money | Critical | Configure live Stripe and run controlled live test. |
 | Authenticated E2E/API/RLS tests | Requires browser/database/test-user setup | High | Add Playwright/API/RLS tests in a later phase. |
 | CSP browser QA | CSP header is implemented locally, but auth/PDF/Stripe browser flows must be checked on preview | Medium | Run preview browser QA with devtools open and adjust policy if any required flow is blocked. |
-| Supabase migration live application | Supabase connector account does not include project `stjycgosnmtbhuuagunq` | High | Connect the correct Supabase account/project or provide approved SQL access. |
+| Sign-in/redirect stale-page sweep | User reports sign-in still reaches an old page | High | Inspect and update every auth page, redirect URL, callback path, and production alias behavior. |
 | Monitoring | Requires service choice/account | Medium | Pick Sentry/PostHog/Uptime provider. |
 
 ## 23. Path to 100% Completion
@@ -208,7 +208,7 @@ Issues found and partly resolved: formerly unpushed critical files, stock README
 | Priority | File/area | Difficulty | Business impact | Technical risk | Estimated effort | Acceptance criteria |
 |---|---|---|---|---|---|---|
 | P0 | Auth/invoice QA | Medium | High | Medium | 2 hrs | Test user completes signup to saved PDF. |
-| P0 | DB quota/numbering | Medium | High | High | 1-2 hrs after DB approval | Prepared migration is applied, flag is enabled, and concurrent creates cannot bypass quota/numbering. |
+| P0 | DB quota/numbering | Medium | High | High | 1-2 hrs | RPC flag is enabled after authenticated QA proves concurrent creates cannot bypass quota/numbering. |
 | P1 | Legal copy depth | Medium | High | Medium | 2-4 hrs | Founder-approved beta legal pages live. |
 | P1 | E2E smoke | Medium | High | Medium | 4-6 hrs | Auth/invoice/free-limit tests automated. |
 
@@ -268,6 +268,6 @@ npm run start
 
 ## 25. Final Recommendation
 
-This site is not beta-ready today until authenticated production QA passes and the Supabase atomic invoice migration is applied/verified. It is not production-ready for paid launch. Current score: 90/100 beta readiness, 66/100 production readiness.
+This site is not beta-ready today until authenticated production QA passes and stale sign-in redirects/pages are eliminated. It is not production-ready for paid launch. Current score: 92/100 beta readiness, 68/100 production readiness.
 
-Next action: connect the correct Supabase project or provide approved SQL access for `stjycgosnmtbhuuagunq`, then run authenticated production QA and configure live Production Stripe env before any paid launch.
+Next action: sweep and correct all auth pages/redirects so sign-in cannot land on stale pages, then run authenticated production QA and configure live Production Stripe env before any paid launch.

@@ -61,7 +61,7 @@ Production serves the current public, legal, auth, billing, and webhook route su
 
 Do not treat a migration file in this repo as proof that the hosted Supabase database has been changed.
 
-`INVOICE_CREATE_RPC_ENABLED` must stay `false` until `supabase/migrations/20260529090606_atomic_invoice_create.sql` has been applied and verified in the target Supabase environment. When enabled, `/api/invoices` uses the `create_invoice_atomic` RPC for quota enforcement and invoice numbering.
+`INVOICE_CREATE_RPC_ENABLED` must stay `false` until authenticated invoice QA verifies the target environment. The Supabase migrations through `20260529121916_grant_create_invoice_atomic.sql` are applied to the linked hosted project, and `/api/invoices` can use the `create_invoice_atomic` RPC for quota enforcement and invoice numbering once the flag is enabled.
 
 ## Troubleshooting
 
