@@ -42,6 +42,7 @@ There is no unit, integration, API, E2E, accessibility, or visual regression tes
 
 ```bash
 npm run lint
+npm run readiness
 npm run typecheck
 npm run build
 npm run smoke
@@ -55,3 +56,7 @@ npm test
 npm run test:e2e
 npm run test:a11y
 ```
+
+## Static Readiness Guard
+
+`npm run readiness` checks that release-critical files exist, runtime copy does not reintroduce blocked stale language, and the new invoice page cannot download an unsaved PDF. It is not a substitute for authenticated E2E or Supabase RLS tests.

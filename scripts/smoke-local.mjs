@@ -1,7 +1,17 @@
 const baseUrl = (process.env.SMOKE_BASE_URL || 'http://127.0.0.1:3028').replace(/\/$/, '');
 
 const checks = [
-  { method: 'GET', path: '/', expected: [200] },
+  {
+    method: 'GET',
+    path: '/',
+    expected: [200],
+    responseHeaders: {
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'DENY',
+      'referrer-policy': 'strict-origin-when-cross-origin',
+      'permissions-policy': 'camera=(), microphone=(), geolocation=(), payment=()',
+    },
+  },
   { method: 'GET', path: '/login', expected: [200] },
   { method: 'GET', path: '/signup', expected: [200] },
   { method: 'GET', path: '/forgot-password', expected: [200] },
@@ -23,7 +33,7 @@ const checks = [
     method: 'POST',
     path: '/api/invoices',
     expected: [403],
-    headers: { Origin: 'https://invalid.example' },
+    requestHeaders: { Origin: 'https://invalid.example' },
   },
 ];
 
@@ -32,19 +42,27 @@ let failures = 0;
 for (const check of checks) {
   const response = await fetch(`${baseUrl}${check.path}`, {
     method: check.method,
-    headers: check.headers,
+    headers: check.requestHeaders,
     redirect: 'follow',
   });
 
   const finalUrl = new URL(response.url);
   const statusOk = check.expected.includes(response.status);
   const redirectOk = check.redirectedTo ? finalUrl.pathname === check.redirectedTo : true;
+  const missingHeaders = Object.entries(check.responseHeaders || {}).filter(
+    ([name, value]) => response.headers.get(name) !== value
+  );
 
-  if (!statusOk || !redirectOk) {
+  if (!statusOk || !redirectOk || missingHeaders.length > 0) {
     failures += 1;
     console.error(
       `FAIL ${check.method} ${check.path}: got ${response.status} ${finalUrl.pathname}, expected ${check.expected.join('/')} ${check.redirectedTo || ''}`.trim()
     );
+    if (missingHeaders.length > 0) {
+      for (const [name, value] of missingHeaders) {
+        console.error(`  header ${name}: got ${response.headers.get(name) || '(missing)'}, expected ${value}`);
+      }
+    }
     continue;
   }
 

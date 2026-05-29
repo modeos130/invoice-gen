@@ -34,6 +34,9 @@ jobs:
       - name: Verify build
         run: npm run verify
 
+      - name: Run static readiness guard
+        run: npm run readiness
+
       - name: Run smoke checks
         run: |
           npm run start -- -p 3028 &

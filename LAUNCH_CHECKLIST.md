@@ -4,6 +4,7 @@
 
 - [ ] Commit and push all launch-critical files; `git status --short` must be clean except ignored local env/build files.
 - [ ] Confirm GitHub Actions CI passes on the pushed commit.
+- [ ] Confirm local `npm run readiness` and `npm run smoke` pass before preview deploy.
 - [ ] Deploy the current source to a preview URL.
 - [ ] Confirm preview returns `200` for `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`, `/privacy`, `/refunds`.
 - [ ] Confirm preview returns `401` for unauthenticated `/api/billing/status`.
