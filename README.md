@@ -53,11 +53,11 @@ npm audit --audit-level=low
 
 ## CI
 
-GitHub Actions runs `npm ci`, `npm run verify`, `npm run readiness`, `npm run test:unit`, starts the production server, and runs `npm run smoke` on pushes to `main` and pull requests. This proves the committed source can install, build, serve the public/protected smoke routes, run pure-helper tests, and retain key release guardrails. It does not replace authenticated user QA, Supabase migration approval, production deployment approval, or live Stripe payment testing.
+GitHub Actions runs `npm ci`, `npm run verify`, `npm run readiness`, `npm run test:unit`, starts the production server, and runs `npm run smoke` on pushes to `main` and pull requests. The current `main` branch has passed CI and production route smoke on both `ihateinvoices.com` domains. CI does not replace authenticated user QA, Supabase migration approval, or live Stripe payment testing.
 
 ## Production Notes
 
-Production is not ready for paid launch until the current billing/legal API surface is deployed, live Stripe Product/Price/webhook/portal are configured, Supabase migrations are confirmed live, and authenticated QA proves signup, invoice creation, quota enforcement, checkout, webhook entitlement, billing portal, cancellation, and password reset.
+Production serves the current public, legal, auth, billing, and webhook route surface. It is not ready for paid launch until live Stripe Product/Price/webhook/portal variables are configured for Production, Supabase migrations are confirmed live, and authenticated QA proves signup, invoice creation, quota enforcement, checkout, webhook entitlement, billing portal, cancellation, and password reset.
 
 Do not treat a migration file in this repo as proof that the hosted Supabase database has been changed.
 
@@ -66,6 +66,6 @@ Do not treat a migration file in this repo as proof that the hosted Supabase dat
 ## Troubleshooting
 
 - Login loops usually mean Supabase browser auth is not writing SSR-compatible cookies or the Supabase redirect URL/domain allowlist is wrong.
-- Billing route `404` in production means the deployed production build does not contain the current `app/api/billing/*` routes.
+- Billing route `401` for unauthenticated requests is expected; authenticated billing failures usually mean missing Stripe or Supabase server env values.
 - Stripe webhook `400` without a signature is expected.
 - Missing `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_PRO_PRICE_ID`, or `STRIPE_WEBHOOK_SECRET` will break billing routes server-side.

@@ -4,13 +4,13 @@ This is an engineering security checklist, not a formal penetration test.
 
 ## Current Verdict
 
-Security is acceptable for controlled internal testing after the current code is deployed to preview and authenticated QA passes. It is not ready for public paid production.
+Security is acceptable for controlled internal testing after authenticated QA passes. It is not ready for public paid production.
 
 ## Critical Findings
 
 | Finding | Evidence | Risk | Required fix |
 |---|---|---|---|
-| Production does not serve current billing/API routes | Live `/api/billing/status` and `/api/stripe/webhook` return `404`; local files exist in `app/api/billing/*` and `app/api/stripe/webhook/route.ts` | Live production cannot enforce billing or receive Stripe webhooks | Commit/push/deploy current working tree and smoke production. |
+| Production paid billing is not configured | Vercel Production env does not list `STRIPE_SECRET_KEY`, `STRIPE_PRO_PRICE_ID`, or `STRIPE_WEBHOOK_SECRET`; unauthenticated route smoke passes but paid flow is untested | Authenticated paid checkout/webhook/portal cannot be considered live-money ready | Add live Production Stripe env values, configure webhook endpoint, and run controlled paid-flow QA. |
 
 ## High Findings
 
@@ -25,7 +25,7 @@ Security is acceptable for controlled internal testing after the current code is
 | Finding | Evidence | Risk | Required fix |
 |---|---|---|---|
 | Rate limiting is in-memory only | `app/api/invoices/route.ts` and `app/api/billing/*` use same-origin checks and local per-user buckets | Abuse controls reset across serverless instances and deploys | Add durable provider-level or database-backed throttling before broad public launch. |
-| Webhook idempotency not live-proven | `lib/stripe-webhook.ts` now atomically claims events before processing, but production is still stale until pushed/deployed | Duplicate-event protection is not active on production yet | Push/deploy current source and replay duplicate Stripe events in preview/live test mode. |
+| Webhook idempotency not live-replayed | `lib/stripe-webhook.ts` now atomically claims events before processing and production serves the current route | Duplicate replay behavior is not proven against real Stripe delivery | Replay duplicate Stripe events in preview/live test mode after webhook env is configured. |
 | DB-level field limits are still incomplete | App-level invoice/client/line-item limits now exist in `app/api/invoices/route.ts` and UI forms, but DB constraints are still broad `TEXT`/`JSONB` fields | Direct database API usage or future code paths could bypass app limits | Add DB constraints in the approved Supabase migration phase. |
 | CSP not preview/browser-proven | `next.config.ts` now sets an enforced CSP and smoke checks the header; authenticated browser QA is still needed | Overly strict policy could break an untested paid/auth flow | Verify signup, invoice PDF, checkout redirect, and billing portal on preview with browser devtools open. |
 | Moderate dependency advisories | `npm audit` reports Next via bundled PostCSS advisory | XSS advisory in dependency chain | Track Next/PostCSS fix; do not force downgrade. |
