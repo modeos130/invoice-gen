@@ -261,6 +261,43 @@ describe('billing API routes', () => {
     );
   });
 
+  it('replaces a stale Stripe customer id and retries checkout once', async () => {
+    resetState({
+      profile: billingProfile({
+        stripe_customer_id: 'cus_stale',
+      }),
+    });
+    stripeCalls.checkoutCreate
+      .mockRejectedValueOnce({
+        type: 'StripeInvalidRequestError',
+        code: 'resource_missing',
+        param: 'customer',
+        message: 'No such customer: cus_stale',
+      })
+      .mockResolvedValueOnce({ url: 'https://checkout.stripe.test/session' });
+
+    const response = await billingCheckout();
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      url: 'https://checkout.stripe.test/session',
+    });
+    expect(stripeCalls.customersCreate).toHaveBeenCalledTimes(1);
+    expect(stripeCalls.checkoutCreate).toHaveBeenCalledTimes(2);
+    expect(stripeCalls.checkoutCreate).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        customer: 'cus_stale',
+      })
+    );
+    expect(stripeCalls.checkoutCreate).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        customer: 'cus_created',
+      })
+    );
+  });
+
   it('returns 503 from checkout when Stripe server configuration is missing', async () => {
     stripeConfigError = new Error('Missing required environment variable: STRIPE_SECRET_KEY');
 
