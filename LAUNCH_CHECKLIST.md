@@ -31,7 +31,7 @@
 - [ ] Verify webhook grants Pro entitlement.
 - [ ] Verify cancellation removes Pro entitlement.
 - [ ] Decide sales tax/VAT handling with accountant guidance.
-- [ ] Add tested CSP, rate limiting, and CSRF/origin checks.
+- [ ] Add tested CSP and confirm production abuse-monitoring coverage.
 - [ ] Add monitoring/error tracking.
 - [ ] Add automated E2E and RLS tests.
 
