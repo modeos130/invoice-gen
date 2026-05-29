@@ -52,13 +52,17 @@ npm audit --audit-level=low
 
 `npm run verify` runs lint, typecheck, and build together. `npm run readiness` checks release-critical files, protected-copy expectations, and the saved-only PDF export rule. `npm run test:unit` runs Vitest tests for pure helpers. `npm run smoke` checks local or preview route responses and baseline security headers.
 
+`/api/health` is the safe production health endpoint for uptime checks. It returns only `ok`, `service`, and `timestamp`, and should be monitored alongside the public homepage.
+
 ## CI
 
 GitHub Actions runs `npm ci`, `npm run verify`, `npm run readiness`, `npm run test:unit`, starts the production server, and runs `npm run smoke` on pushes to `main` and pull requests. The current `main` branch has passed CI and production route smoke on both `ihateinvoices.com` domains. CI does not replace authenticated user QA, Supabase migration approval, or live Stripe payment testing.
 
 ## Production Notes
 
-Production serves the current public, legal, auth, billing, and webhook route surface on `https://www.ihateinvoices.com`. Live Stripe Product/Price/webhook/portal variables are configured in Vercel Production, and the owner completed a live Pro checkout, billing portal open, invoice creation, status update, and PDF download test. Remaining launch checks are final owner/legal review, archive/restore live QA, any desired test-data cleanup, and ongoing production log monitoring.
+Production serves the current public, legal, auth, billing, and webhook route surface on `https://www.ihateinvoices.com`. Live Stripe Product/Price/webhook/portal variables are configured in Vercel Production, and the owner completed a live Pro checkout, billing portal open, invoice creation, status update, and PDF download test. Remaining launch checks are final owner/legal review, any desired test-data cleanup, and ongoing production log monitoring.
+
+See `PRODUCTION_MONITORING.md` for the uptime targets, Vercel log commands, workflow triage steps, and rollback checklist.
 
 Signup and verification emails must redirect through `/auth/callback?next=/dashboard`, not directly to `/dashboard`. The callback exchanges the Supabase code for SSR cookies before sending the user into the protected workspace, which prevents confirmation links from landing on stale or unauthenticated protected pages.
 
@@ -74,4 +78,5 @@ Archive/restore support requires `supabase/migrations/20260529175218_add_archive
 - Email confirmation links that land on an old page usually mean the deployed Supabase email redirect URL or deployed source is stale. Confirm `/auth/callback` is deployed and allowlisted in Supabase Auth URL settings.
 - Billing route `401` for unauthenticated requests is expected; authenticated billing failures usually mean missing Stripe or Supabase server env values.
 - Stripe webhook `400` without a signature is expected.
+- `/api/health` should return `200` and `ok: true`; if it fails, check the current Vercel deployment before debugging individual app workflows.
 - Missing `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_PRO_PRICE_ID`, or `STRIPE_WEBHOOK_SECRET` will break billing routes server-side.

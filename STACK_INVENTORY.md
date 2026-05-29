@@ -16,7 +16,7 @@ All paths are under `/Users/booman/projects/invoice-gen` unless noted.
 | Security headers | Basic response hardening and CSP | `next.config.ts`, `scripts/smoke-local.mjs` | None | Medium | Added nosniff, frame deny, referrer policy, permissions policy, and enforced CSP baseline; authenticated preview browser QA still required. |
 | SEO metadata | Titles, descriptions, OG/Twitter, robots, sitemap | `app/layout.tsx`, `app/robots.ts`, `app/sitemap.ts` | `NEXT_PUBLIC_APP_URL` | Medium | Baseline is deployed and sitemap/canonical use `https://www.ihateinvoices.com`; richer OG/schema work remains. |
 | Testing tools | Static validation, unit tests, smoke checks | `package.json`, `tests/*`, `scripts/*`, `.github/workflows/ci.yml` | None | Medium | Vitest unit tests exist for helpers, route wrappers, Stripe webhook duplicate claiming, and atomic invoice RPC flag behavior; E2E, preview Stripe replay, and RLS tests still needed. |
-| Analytics/monitoring | Not present | No Sentry/PostHog/logger code found | TBD | Medium | Needed before paid public launch. |
+| Analytics/monitoring | Uptime and incident triage baseline | `app/api/health/route.ts`, `scripts/smoke-local.mjs`, `PRODUCTION_MONITORING.md`; owner-managed UptimeRobot | Optional future error-tracking DSN | Medium | `/api/health` and Vercel log runbook exist; dedicated error tracking such as Sentry is still a paid-launch improvement. |
 
 ## Dependency Notes
 

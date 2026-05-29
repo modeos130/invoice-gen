@@ -7,6 +7,7 @@
 - [ ] Confirm local `npm run readiness` and `npm run smoke` pass before preview deploy.
 - [ ] Deploy the current source to a preview URL.
 - [ ] Confirm preview returns `200` for `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`, `/privacy`, `/refunds`.
+- [ ] Confirm preview and production return `200` with `ok: true` for `/api/health`.
 - [ ] Confirm preview `/auth/callback` without a code redirects safely to `/login`.
 - [ ] Confirm preview returns `404` with branded fallback UI for an unknown route.
 - [ ] Confirm preview returns `401` for unauthenticated `/api/billing/status`.
@@ -41,7 +42,8 @@
 - [ ] Verify invoice archive, invoice restore, client archive, and client restore on production.
 - [ ] Decide sales tax/VAT handling with accountant guidance.
 - [ ] Confirm production CSP and production abuse-monitoring coverage.
-- [ ] Add monitoring/error tracking.
+- [ ] Confirm UptimeRobot monitors `https://www.ihateinvoices.com/` and `https://www.ihateinvoices.com/api/health`.
+- [ ] Add owner-approved dedicated error tracking if paid traffic increases.
 - [ ] Add automated E2E and RLS tests.
 
 ## After Launch
@@ -49,6 +51,7 @@
 - [ ] Monitor signups, first invoice completion, free-limit hits, checkout starts, checkout completions, cancellations, and support requests.
 - [ ] Review Stripe failed payments and webhook delivery daily for the first week.
 - [ ] Review Supabase auth/database logs daily for the first week.
+- [ ] Review Vercel `500` logs daily for the first week.
 - [ ] Add client edit, invoice edit/duplicate, search/filter/sort, and mobile table improvements.
 
 ## Emergency Rollback

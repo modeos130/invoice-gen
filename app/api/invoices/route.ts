@@ -5,6 +5,27 @@ import { rateLimitRequest, rejectCrossOriginPost } from '@/lib/request-security'
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import type { BillingProfile } from '@/lib/billing';
 
+function logSupabaseError(label: string, error: unknown) {
+  if (!error || typeof error !== 'object') {
+    console.error(label);
+    return;
+  }
+
+  const supabaseError = error as {
+    code?: unknown;
+    message?: unknown;
+    details?: unknown;
+    hint?: unknown;
+  };
+
+  console.error(label, {
+    code: supabaseError.code,
+    message: supabaseError.message,
+    details: supabaseError.details,
+    hint: supabaseError.hint,
+  });
+}
+
 export async function POST(request: NextRequest) {
   const originError = rejectCrossOriginPost(request);
   if (originError) return originError;
@@ -84,6 +105,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Client name is required.' }, { status: 400 });
       }
 
+      logSupabaseError('Atomic invoice create failed', rpcError);
       return NextResponse.json({ error: 'Failed to save invoice.' }, { status: 500 });
     }
 
@@ -97,6 +119,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
 
   if (profileError) {
+    logSupabaseError('Billing profile lookup failed during invoice create', profileError);
     return NextResponse.json({ error: 'Billing status unavailable.' }, { status: 500 });
   }
 
@@ -110,6 +133,7 @@ export async function POST(request: NextRequest) {
       .gte('created_at', currentMonthStartIso());
 
     if (countError) {
+      logSupabaseError('Monthly invoice usage lookup failed', countError);
       return NextResponse.json({ error: 'Invoice usage unavailable.' }, { status: 500 });
     }
 
@@ -158,6 +182,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (clientError || !newClient) {
+      logSupabaseError('Client insert failed during invoice create', clientError);
       return NextResponse.json({ error: 'Failed to create client.' }, { status: 500 });
     }
 
@@ -170,6 +195,7 @@ export async function POST(request: NextRequest) {
     .eq('user_id', user.id);
 
   if (invoiceCountError) {
+    logSupabaseError('Invoice number count lookup failed', invoiceCountError);
     return NextResponse.json({ error: 'Unable to generate invoice number.' }, { status: 500 });
   }
 
@@ -198,6 +224,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (insertError || !invoice) {
+    logSupabaseError('Invoice insert failed', insertError);
     return NextResponse.json({ error: 'Failed to save invoice.' }, { status: 500 });
   }
 

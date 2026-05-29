@@ -6,6 +6,20 @@ import { createSupabaseAdminClient } from '@/lib/supabase-server';
 import { getStripe } from '@/lib/stripe';
 import { processStripeWebhookEvent, type StripeWebhookAdminClient } from '@/lib/stripe-webhook';
 
+function describeServerError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+    };
+  }
+
+  return {
+    name: 'UnknownError',
+    message: 'Unknown server error',
+  };
+}
+
 export async function POST(request: NextRequest) {
   const payload = await request.text();
   const signature = (await headers()).get('stripe-signature');
@@ -38,6 +52,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Webhook processing failed';
+    console.error('Stripe webhook processing failed', {
+      eventId: event.id,
+      eventType: event.type,
+      ...describeServerError(error),
+    });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

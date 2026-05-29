@@ -20,7 +20,7 @@ Completed in the current release pass: Git push, GitHub Actions CI, production d
 |---|---|---|---|---|---|---|
 | P1 | Stripe production | Configure live Product/Price/webhook/portal | Medium | Critical | High | Live subscription tested with owner approval. |
 | P1 | Supabase | Add composite indexes and integrity constraints | Medium | Medium | Medium | Hot queries indexed; invalid totals/statuses rejected. |
-| P1 | Monitoring | Add error tracking and uptime monitoring | Medium | High | Low | Production failures notify owner. |
+| P1 | Monitoring | Add third-party error tracking after uptime baseline | Medium | High | Low | `/api/health`, UptimeRobot coverage, Vercel log runbook, and owner-approved error tracking are active. |
 | P1 | Archive QA | Deploy and verify invoice/client archive and restore | Medium | High | Medium | Active lists hide archived records, archived views restore records, and no hard delete is exposed to normal users. |
 | P2 | Dashboard/clients | Add pagination/search/mobile cards | Medium | Medium | Medium | Large accounts stay usable. |
 | P2 | Product UX | Expand first-run checklist with completion state | Low | Medium | Low | New users see clear next step path and completed steps. |

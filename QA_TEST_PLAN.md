@@ -2,7 +2,7 @@
 
 ## Current Testing State
 
-Vitest unit testing is installed for pure helper and selected API wrapper coverage. Current automated checks include lint, TypeScript, production build, static readiness guard, unit tests, and route smoke checks. Unit tests cover billing helpers, billing route response/session builders, server environment helpers, invoice validation, request-security helpers, Stripe webhook processing helpers, signed Stripe webhook route fixtures, atomic webhook duplicate-event claiming, billing API route wrappers, invoice API route wrappers, the feature-flagged atomic invoice RPC path, and the static readiness guard. Route smoke now includes `/auth/callback` redirect behavior and protected-route unauthenticated redirects. Authenticated E2E, accessibility, visual regression, preview Stripe replay, Supabase RLS tests, authenticated protected-page visual QA, and authenticated QA of the live atomic invoice RPC path are still missing.
+Vitest unit testing is installed for pure helper and selected API wrapper coverage. Current automated checks include lint, TypeScript, production build, static readiness guard, unit tests, and route smoke checks. Unit tests cover billing helpers, billing route response/session builders, server environment helpers, invoice validation, request-security helpers, Stripe webhook processing helpers, signed Stripe webhook route fixtures, atomic webhook duplicate-event claiming, billing API route wrappers, invoice API route wrappers, the feature-flagged atomic invoice RPC path, and the static readiness guard. Route smoke now includes `/api/health`, `/auth/callback` redirect behavior, and protected-route unauthenticated redirects. Authenticated E2E, accessibility, visual regression, preview Stripe replay, Supabase RLS tests, authenticated protected-page visual QA, and authenticated QA of the live atomic invoice RPC path are still missing.
 
 ## Minimum Tests Required Before Beta
 
@@ -19,6 +19,7 @@ Vitest unit testing is installed for pure helper and selected API wrapper covera
 | Billing status | Dashboard status for free/pro | Correct usage/plan appears from `/api/billing/status`. |
 | Protected page UI | Dashboard, clients, new invoice, saved invoice detail | Authenticated pages use the current light app shell and do not render the retired dark-blue page styling. |
 | Public routes | `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`, `/privacy`, `/refunds` | All return `200` on preview. |
+| Health route | `/api/health` | Returns `200`, `ok: true`, `service: ihateinvoices`, and no secrets. |
 | 404 fallback | Unknown route such as `/definitely-missing` | Returns `404` with the branded not-found page. |
 | Legal links | Footer/auth links | Links resolve and display Booman Systems LLC contact info configured in `lib/company.ts`. |
 | CSP smoke | Root route response headers | Enforced `Content-Security-Policy` header is present and matches the expected baseline. |
@@ -68,6 +69,10 @@ npm run test:a11y
 ## Static Readiness Guard
 
 `npm run readiness` checks that release-critical files exist, runtime copy does not reintroduce blocked stale language, and the new invoice page cannot download an unsaved PDF. It is not a substitute for authenticated E2E, protected-page visual QA, or Supabase RLS tests.
+
+## Production Monitoring QA
+
+Before public paid launch, confirm UptimeRobot or equivalent monitoring checks both `https://www.ihateinvoices.com/` and `https://www.ihateinvoices.com/api/health`. Confirm Vercel logs can be queried for recent `500` responses and that `PRODUCTION_MONITORING.md` matches the active Vercel scope and GitHub repository.
 
 ## Database Migration QA
 

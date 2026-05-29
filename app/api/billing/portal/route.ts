@@ -6,6 +6,20 @@ import { getStripe } from '@/lib/stripe';
 import { isMissingServerEnvError } from '@/lib/server-env';
 import type { BillingProfile } from '@/lib/billing';
 
+function describeServerError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+    };
+  }
+
+  return {
+    name: 'UnknownError',
+    message: 'Unknown server error',
+  };
+}
+
 export async function POST(request: NextRequest) {
   const originError = rejectCrossOriginPost(request);
   if (originError) return originError;
@@ -55,7 +69,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Payment setup is not configured yet.' }, { status: 503 });
     }
 
-    console.error('Stripe billing portal session creation failed.');
+    console.error('Stripe billing portal session creation failed', describeServerError(sessionError));
     return NextResponse.json({ error: 'Billing portal unavailable.' }, { status: 502 });
   }
 }

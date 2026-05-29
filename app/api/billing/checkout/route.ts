@@ -31,6 +31,20 @@ function isMissingStripeCustomerError(error: unknown) {
   );
 }
 
+function describeServerError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+    };
+  }
+
+  return {
+    name: 'UnknownError',
+    message: 'Unknown server error',
+  };
+}
+
 async function createStripeCustomerForUser(
   stripe: Stripe,
   admin: ReturnType<typeof createSupabaseAdminClient>,
@@ -144,7 +158,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to prepare billing profile' }, { status: 500 });
     }
 
-    console.error('Stripe checkout session creation failed.');
+    console.error('Stripe checkout session creation failed', describeServerError(error));
     return NextResponse.json({ error: 'Billing session unavailable.' }, { status: 502 });
   }
 }

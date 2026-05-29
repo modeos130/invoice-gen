@@ -13,6 +13,7 @@ const checks = [
       'content-security-policy': "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; connect-src 'self' https://*.supabase.co https://api.stripe.com; frame-src https://checkout.stripe.com https://billing.stripe.com; worker-src 'self' blob:; upgrade-insecure-requests",
     },
   },
+  { method: 'GET', path: '/api/health', expected: [200] },
   { method: 'GET', path: '/login', expected: [200] },
   { method: 'GET', path: '/signup', expected: [200] },
   { method: 'GET', path: '/forgot-password', expected: [200] },

@@ -5,6 +5,7 @@ import { join } from 'node:path';
 export const requiredFiles = [
   '.env.example',
   '.github/workflows/ci.yml',
+  'app/api/health/route.ts',
   'app/api/invoices/route.ts',
   'app/api/invoices/[id]/archive/route.ts',
   'app/api/clients/[id]/archive/route.ts',
