@@ -11,8 +11,7 @@
 | P0 | Stripe | Complete preview Stripe checkout/webhook/portal QA | Medium | High | High | Test subscription grants/removes Pro through webhook. |
 | P1 | Legal pages | Deploy `/terms`, `/privacy`, `/refunds` and add missing privacy/cookie/minors language | Medium | High | Medium | Legal pages reachable and founder-approved. |
 | P1 | Security | Add tested CSP and broader abuse monitoring | Medium | High | Medium | Production has a tested CSP and abuse signals beyond local request throttles. |
-| P1 | Unit tests | Expand Vitest coverage to remaining API route wrappers | Medium | Medium | Low | Invoice and billing API edge cases covered without depending on live Stripe or production Supabase. |
-| P1 | QA | Add authenticated E2E and RLS tests | Medium | High | Medium | Auth, invoice, PDF, free limit, billing, and cross-user data isolation automated. |
+| P1 | QA automation | Add authenticated E2E and Supabase RLS tests | Medium | High | Medium | Auth, invoice save, free limit, billing status, and cross-user isolation are proven outside pure unit mocks. |
 
 ## Should Fix Before Public Launch
 
