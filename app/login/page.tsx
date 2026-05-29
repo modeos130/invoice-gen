@@ -1,14 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AuthShell } from '@/components/AuthShell';
 import { getAuthErrorMessage, withAuthTimeout } from '@/lib/auth-timeout';
 import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -56,7 +54,7 @@ export default function LoginPage() {
         ? redirect
         : '/dashboard';
 
-      router.replace(destination);
+      window.location.assign(destination);
     } catch (authError) {
       setError(getAuthErrorMessage(authError, 'Sign in failed. Please try again.'));
     } finally {

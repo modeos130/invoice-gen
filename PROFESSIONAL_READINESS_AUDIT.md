@@ -193,6 +193,7 @@ Issues found and partly resolved: formerly unpushed critical files, stock README
 | `app/auth/callback/route.ts`, `app/signup/page.tsx`, `app/verify-email/page.tsx`, `app/login/page.tsx`, `scripts/smoke-local.mjs` | Added a Supabase auth callback route, moved signup/resend email redirects through it, and smoke-covered the missing-code redirect | Prevents email confirmation links from landing directly on a protected route before SSR cookies are exchanged | Run `npm run smoke`; perform real signup/email confirmation QA. |
 | `components/AppPageShell.tsx`, `app/dashboard/page.tsx`, `app/clients/page.tsx`, `app/invoice/new/page.tsx`, `app/invoice/[id]/page.tsx`, `app/globals.css` | Reworked protected app pages onto a shared light product shell | Removes the retired dark-blue protected-page styling that made sign-in appear to return to the old app | Log in and inspect dashboard, clients, new invoice, and saved invoice pages. |
 | `components/PDFTemplate.tsx` | Changed the PDF accent from old blue to the current green product accent | Keeps exported invoices aligned with the refreshed app styling | Download a saved invoice PDF. |
+| `app/login/page.tsx` | Changed successful sign-in from client-side route replacement to full document navigation | Prevents an already-open old client bundle from carrying the user into a stale protected dashboard after login | Sign in from `/login`; the browser should load the current production `/dashboard` document. |
 
 ## 22. Fixes Not Implemented Yet
 
