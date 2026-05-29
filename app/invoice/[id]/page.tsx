@@ -8,14 +8,17 @@ import { formatCurrency, formatDate } from '@/lib/invoice-utils';
 import { AppPageShell } from '@/components/AppPageShell';
 import type { Invoice, InvoiceStatus } from '@/types/invoice';
 
-const PDFDownloadLink = dynamic(
-  () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
-  { ssr: false }
+const InvoicePdfDownloadButton = dynamic(
+  () => import('@/components/InvoicePdfDownloadButton').then((mod) => mod.InvoicePdfDownloadButton),
+  {
+    ssr: false,
+    loading: () => (
+      <button type="button" disabled className="app-btn app-btn-secondary">
+        Preparing...
+      </button>
+    ),
+  }
 );
-
-const PDFTemplate = dynamic(() => import('@/components/PDFTemplate').then(m => ({ default: m.PDFTemplate })), {
-  ssr: false,
-});
 
 const statusConfig: Record<InvoiceStatus, { label: string; bg: string; text: string }> = {
   draft: { label: 'Draft', bg: '#eef2f7', text: '#52616f' },
@@ -128,17 +131,7 @@ export default function InvoiceDetailPage({ params }: PageProps) {
               </select>
             </div>
 
-            {typeof window !== 'undefined' && PDFDownloadLink && PDFTemplate && (
-              <PDFDownloadLink
-                document={<PDFTemplate invoice={invoice} />}
-                fileName={`${invoice.invoice_number}.pdf`}
-                className="app-btn app-btn-secondary"
-              >
-                {({ loading: pdfLoading }) => (
-                  pdfLoading ? 'Preparing...' : 'Download PDF'
-                )}
-              </PDFDownloadLink>
-            )}
+            <InvoicePdfDownloadButton invoice={invoice} />
         </>
       }
     >
