@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AuthShell } from '@/components/AuthShell';
@@ -12,7 +12,25 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const authError = params.get('auth_error');
+
+    if (authError === 'missing-code') {
+      setError('The confirmation link was missing its sign-in code. Request a new verification email.');
+    }
+
+    if (authError === 'confirmation-failed') {
+      setError('The confirmation link could not be verified. Request a new verification email.');
+    }
+
+    if (params.get('verified') === 'true') {
+      setNotice('Email verified. Sign in to continue.');
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -63,6 +81,11 @@ export default function LoginPage() {
           {error && (
             <div className="auth-alert auth-alert-error" role="alert">
               {error}
+            </div>
+          )}
+          {notice && (
+            <div className="auth-alert auth-alert-success" role="status">
+              {notice}
             </div>
           )}
 

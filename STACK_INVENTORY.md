@@ -4,10 +4,10 @@ All paths are under `/Users/booman/projects/invoice-gen` unless noted.
 
 | Technology / service | Purpose | Where it appears | Required env | Risk | Notes |
 |---|---|---|---|---|---|
-| Next.js 16 App Router | Frontend and server routes | `package.json`, `app/*`, `next.config.ts` | `NEXT_PUBLIC_APP_URL` | Medium | Build passes; production currently drifts from local source. |
+| Next.js 16 App Router | Frontend and server routes | `package.json`, `app/*`, `next.config.ts` | `NEXT_PUBLIC_APP_URL` | Medium | Build passes; production must be re-smoked after every push. |
 | React 19 | UI runtime | `package.json`, app pages | None | Low | Mostly client components for app workspace. |
-| Tailwind CSS 4 | Styling | `app/globals.css`, `postcss.config.mjs` | None | Low | Public and auth pages use custom product styling. |
-| Supabase Auth | Signup, login, password reset, sessions | `lib/supabase.ts`, `lib/supabase-server.ts`, auth pages, `proxy.ts` | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | High | Browser client now uses `@supabase/ssr` cookies. Auth QA still required. |
+| Tailwind CSS 4 plus custom app shell CSS | Styling | `app/globals.css`, `components/AppPageShell.tsx`, `postcss.config.mjs` | None | Low | Public, auth, and protected app pages use custom product styling distinct from the retired dark-blue page. |
+| Supabase Auth | Signup, login, password reset, sessions | `lib/supabase.ts`, `lib/supabase-server.ts`, `app/auth/callback/route.ts`, auth pages, `proxy.ts` | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | High | Browser client uses `@supabase/ssr` cookies; email verification links route through `/auth/callback`. Authenticated QA still required. |
 | Supabase Postgres/RLS | Clients, invoices, invoice counters, billing profiles, webhook event records | `supabase/schema.sql`, `supabase/migrations/*`, app/API routes | `SUPABASE_SERVICE_ROLE_KEY` server-side; `INVOICE_CREATE_RPC_ENABLED` after authenticated QA | High | Hosted migrations through `20260529121916_grant_create_invoice_atomic.sql` are applied; RPC flag remains off until authenticated invoice/concurrency QA. |
 | Stripe | Pro subscription checkout, portal, webhook entitlement | `lib/stripe.ts`, `lib/stripe-webhook.ts`, `app/api/billing/*`, `app/api/stripe/webhook/route.ts` | `STRIPE_SECRET_KEY`, `STRIPE_PRO_PRICE_ID`, `STRIPE_WEBHOOK_SECRET` | Critical | Preview/test plumbing exists and webhook event claiming is unit-tested; production live billing remains unproven. |
 | React PDF | Saved invoice PDF export | `components/PDFTemplate.tsx`, invoice detail route | None | Medium | Unsaved PDF bypass was removed; heavy chunks should be loaded only on demand later. |

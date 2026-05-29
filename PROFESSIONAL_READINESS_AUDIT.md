@@ -6,15 +6,15 @@ All file paths are under `/Users/booman/projects/invoice-gen` unless noted. `inv
 
 - Site name: I Hate Invoices
 - What the site does: Small-business invoice creation, client records, saved PDF export, manual payment-status tracking, and Free-to-Pro subscription billing.
-- Current estimated completion: 92% beta readiness; 68% production readiness.
-- Beta readiness score: 92/100
-- Production readiness score: 68/100
+- Current estimated completion: 94% beta readiness; 70% production readiness.
+- Beta readiness score: 94/100
+- Production readiness score: 70/100
 - Biggest strength: Current `main` is pushed, CI-passing, deployed to production, and route-smoke-tested on both `ihateinvoices.com` domains.
-- Biggest weakness: Authenticated user flows, sign-in redirect/page consistency, and production Stripe env/live billing are not proven.
-- Biggest launch blocker: Sign-in is reported to reach an old page, and production Stripe env values are still missing.
-- Overall recommendation: Internal testing only. Beta-ready after fixes; public launch-ready after more fixes.
+- Biggest weakness: Authenticated user flows and production Stripe env/live billing are not proven.
+- Biggest launch blocker: Authenticated production QA and production Stripe env values are still missing.
+- Overall recommendation: Internal testing only. Beta-ready after authenticated QA; public launch-ready after more fixes.
 
-Validation completed in this pass: `npm run test:unit` passed, `npm run readiness` passed, `npm run lint` passed, `npm run typecheck` passed, `npm run build` passed, and a local production server on port `3028` returned `/` `200`, `/terms` `200`, `/robots.txt` `200`, `/sitemap.xml` `200`, unauthenticated `/api/billing/status` `401`, unsigned `/api/stripe/webhook` `400`, and invalid-origin `/api/invoices` `403`.
+Validation completed in this pass: `npm run test:unit` passed, `npm run readiness` passed, `npm run lint` passed, `npm run typecheck` passed, `npm run build` passed, and a local production server on port `3028` returned `/` `200`, `/auth/callback` `200 -> /login`, `/terms` `200`, `/robots.txt` `200`, `/sitemap.xml` `200`, unauthenticated `/dashboard` `200 -> /login`, unauthenticated `/api/billing/status` `401`, unsigned `/api/stripe/webhook` `400`, and invalid-origin `/api/invoices` `403`. Local browser QA verified the light auth/signup pages and redirect handling without console errors; authenticated protected-page visual QA still requires a real test user session.
 
 ## 2. Plain-English Site Description
 
@@ -33,18 +33,19 @@ See `STACK_INVENTORY.md`.
 | Route | Purpose | Access | Data dependencies | Current condition | Problems | Required fixes |
 |---|---|---|---|---|---|---|
 | `/` | Marketing/pricing homepage | Public | `lib/company.ts` for contact link | Deployed and smoke-tested | Authenticated conversion flow untested | Browser QA. |
-| `/login` | Sign in | Public | Supabase Auth | Builds; cookie client fixed locally | Auth QA still required | Deploy and test. |
-| `/signup` | Account creation | Public | Supabase Auth | Builds | Email verification QA required | Test real flow. |
+| `/login` | Sign in | Public | Supabase Auth | Builds; auth-error handling added; local light UI browser QA passed | Authenticated production QA still required | Deploy and test. |
+| `/signup` | Account creation | Public | Supabase Auth | Builds; email verification now targets `/auth/callback?next=/dashboard` | Email verification QA required | Test real flow. |
 | `/forgot-password` | Password reset request | Public | Supabase Auth email | Deployed and smoke-tested | Real email QA required | Test real reset. |
 | `/reset-password` | Set new password | Public with Supabase recovery token | Supabase Auth | Local exists | QA required | Test real reset link. |
-| `/verify-email` | Resend verification | Public | Supabase Auth | Local exists | QA required | Test real account. |
+| `/verify-email` | Resend verification | Public | Supabase Auth | Resend now targets `/auth/callback?next=/dashboard` | QA required | Test real account. |
+| `/auth/callback` | Supabase email confirmation callback | Public | Supabase Auth code exchange | Builds; smoke-covered missing-code redirect to `/login` | Real email confirmation still needs QA | Allowlist callback URL and test real email link. |
 | `/terms` | Terms | Public | `lib/company.ts` | Deployed and smoke-tested | Missing legal depth | Founder/legal review. |
 | `/privacy` | Privacy | Public | `lib/company.ts` | Deployed and smoke-tested | Needs final privacy/legal review | Founder/legal review. |
 | `/refunds` | Refund/cancellation policy | Public | `lib/company.ts` | Deployed and smoke-tested | Stripe portal must be proven | Billing QA. |
-| `/dashboard` | Billing summary and invoice list | Protected | Supabase invoices, `/api/billing/status` | Builds | Unbounded reads; mobile table; live API drift | Add pagination/tests. |
-| `/clients` | Client list and create | Protected | Supabase clients/invoices | Builds | No edit/delete; unbounded counts | Add CRUD/pagination later. |
-| `/invoice/new` | Create invoice | Protected | Supabase clients, `/api/invoices` | Builds; unsaved PDF bypass fixed; hosted atomic RPC exists | Atomic quota is not live until the flag is enabled and QA passes | Enable and verify RPC path in controlled QA. |
-| `/invoice/[id]` | Saved invoice detail/PDF/status | Protected | Supabase invoice | Builds | No edit/delete; status update client-side | Add server action/API later. |
+| `/dashboard` | Billing summary and invoice list | Protected | Supabase invoices, `/api/billing/status` | Builds with current light app shell | Unbounded reads; mobile table; authenticated visual QA still required | Test after login; add pagination/tests. |
+| `/clients` | Client list and create | Protected | Supabase clients/invoices | Builds with current light app shell | No edit/delete; unbounded counts; authenticated visual QA still required | Test after login; add CRUD/pagination later. |
+| `/invoice/new` | Create invoice | Protected | Supabase clients, `/api/invoices` | Builds with current light app shell; unsaved PDF bypass fixed; hosted atomic RPC exists | Atomic quota is not live until the flag is enabled and QA passes | Enable and verify RPC path in controlled QA. |
+| `/invoice/[id]` | Saved invoice detail/PDF/status | Protected | Supabase invoice | Builds with current light app shell and updated PDF accent color | No edit/delete; status update client-side; authenticated visual QA still required | Test after login; add server action/API later. |
 | `/api/invoices` | Save invoices and enforce free limit | Auth API | Supabase billing, clients, invoices, optional `create_invoice_atomic` RPC | Builds; RPC path unit-tested and hosted migration applied | RPC flag remains off until authenticated QA | Enable flag in controlled QA, test invoice creation/concurrency. |
 | `/api/billing/status` | Plan and usage status | Auth API | Supabase billing/invoices | Deployed; unauth smoke returns `401` | Authenticated status untested | Authenticated QA. |
 | `/api/billing/checkout` | Stripe Checkout | Auth API | Supabase admin, Stripe | Deployed; unauth smoke returns `401` | Production Stripe env not configured | Add live env and test. |
@@ -60,12 +61,12 @@ See `STACK_INVENTORY.md`.
 | Feature | Status | Risk | What works | What does not work / missing |
 |---|---|---|---|---|
 | Public homepage | Mostly complete | Medium | Clear offer/pricing; deployed current source | Competitor differentiation must stay monitored. |
-| Signup/login/logout | Mostly complete | High | Supabase auth and route protection exist | Auth cookie fix is local until deployed/tested. |
+| Signup/login/logout | Mostly complete | High | Supabase auth, route protection, callback code exchange, and local public auth UI QA exist | Real email and authenticated production QA still required. |
 | Password recovery | Partial | Medium | Pages exist locally | Production route and real email QA still required. |
 | Client records | Partial | Medium | Create/list | Edit/delete/import/search missing. |
 | Invoice creation | Mostly complete | High | Server API saves invoice; atomic RPC path prepared locally | Atomic quota/numbering not live-enabled until migration verification. |
 | Saved PDF export | Mostly complete | Medium | Saved invoice PDF download | PDF chunk/performance improvements needed. |
-| Dashboard | Partial | Medium | Stats/list/billing status UI | Unbounded reads; no search/filter/pagination. |
+| Dashboard | Partial | Medium | Stats/list/billing status UI and current light app shell | Unbounded reads; no search/filter/pagination; authenticated visual QA required. |
 | Billing checkout | Partial | Critical | Stripe server routes are deployed | Production Stripe env not configured/proven. |
 | Webhook entitlement | Partial | Critical | Signature verification, sync, atomic event claiming, and route deployment exist | Production webhook env and Stripe replay not proven. |
 | Legal pages | Partial | Medium | Terms/privacy/refunds are deployed | Missing final policy depth/review. |
@@ -78,31 +79,31 @@ See `STACK_INVENTORY.md`.
 | Product Functionality | 9/15 | Needs Work | Core routes and API exist | Edit/delete, send/payment links, full QA. |
 | Code Quality / Architecture | 6.5/10 | Needs Work | Build/lint/typecheck/unit tests pass | Server-side data loading, broader tests, remove live drift. |
 | Security | 9/15 | Needs Work | RLS, webhook signatures, server keys, atomic webhook event claim, enforced CSP baseline | Atomic invoice flag not live, preview CSP/browser QA, broader monitoring. |
-| Authentication / Authorization | 5/8 | Needs Work | `proxy.ts`, Supabase SSR clients | Deploy cookie fix, add E2E auth tests. |
+| Authentication / Authorization | 5.8/8 | Needs Work | `proxy.ts`, Supabase SSR clients, `/auth/callback` code exchange | Deploy/test callback flow, add E2E auth tests. |
 | Database / Data Integrity | 5.4/8 | Needs Work | RLS/schema exist; app-level input limits added; atomic invoice migration applied and RPC probe verified | Enable/verify RPC path, DB constraints, remaining indexes. |
 | Payment / Financial Flow | 4.8/8 | Dangerous | Stripe routes are deployed; duplicate webhook claiming is unit-tested | Production Stripe env and paid-flow QA. |
 | Error Handling / Reliability | 4.7/7 | Needs Work | Basic route errors plus branded 404/global error fallback | Safe logs, retries, deeper failure-mode E2E. |
-| UX/UI / Responsive Design | 5/7 | Good | Coherent public/auth/app UI | Mobile tables/forms, first-run checklist. |
-| Accessibility | 3.5/5 | Needs Work | Skip link, labels improved | More keyboard/mobile/table audits. |
+| UX/UI / Responsive Design | 5.8/7 | Good | Coherent public/auth/app UI and protected-page restyling | Mobile tables/forms, first-run checklist, authenticated visual QA. |
+| Accessibility | 3.6/5 | Needs Work | Skip link, labels improved, app shell focus styles | More keyboard/mobile/table audits. |
 | Performance | 3/5 | Needs Work | Static public route, font optimized | PDF lazy load, pagination, server data. |
 | SEO / Metadata / Social Sharing | 3/4 | Needs Work | Metadata/robots/sitemap deployed and smoke-tested | Add richer OG asset/schema. |
 | Legal / Privacy / Compliance | 2.5/4 | Dangerous | Legal pages deployed | Policy expansion and final review. |
-| Testing Coverage | 2.9/4 | Needs Work | Vitest unit tests for billing/env/invoice/security/Stripe webhook/billing/invoice route guardrails, duplicate webhook claiming, atomic invoice RPC flag path, plus signed webhook route fixture | Add authenticated E2E/RLS tests, preview Stripe replay, and live migration concurrency tests. |
+| Testing Coverage | 3/4 | Needs Work | Vitest unit tests for billing/env/invoice/security/Stripe webhook/billing/invoice route guardrails, duplicate webhook claiming, atomic invoice RPC flag path, plus signed webhook route fixture and auth-callback smoke | Add authenticated E2E/RLS tests, preview Stripe replay, protected visual QA, and live migration concurrency tests. |
 
-Current beta-readiness percentage: 92%. Current production-readiness percentage: 68%. Confidence: high for code/build/CI/route-smoke findings and hosted migration presence; medium for authenticated Supabase/Stripe state because live authenticated flows and live Stripe are not fully proven in this pass.
+Current beta-readiness percentage: 94%. Current production-readiness percentage: 70%. Confidence: high for code/build/CI/route-smoke findings, hosted migration presence, and public auth-page local browser QA; medium for authenticated Supabase/Stripe state because live authenticated flows and live Stripe are not fully proven in this pass.
 
 ## 8. Critical Blockers
 
-1. Sign-in is reported to reach an old page and all auth redirects/pages must be swept.
+1. Authenticated signup/login/invoice/PDF QA is still required after deploy.
 2. Production Stripe live Product/Price/webhook/portal env is not configured/proven.
-3. Authenticated signup/login/invoice/PDF QA is still required.
-4. Free invoice quota and invoice numbering have a hosted atomic path, but it is not live-enabled.
-5. No automated auth/RLS/E2E tests; unit tests now cover pure helper, API wrapper, Stripe webhook helper, signed webhook route fixture, and guardrail logic only.
-6. Legal pages are live but still need final policy review/depth.
-7. Production paid flow has not been exercised with owner approval.
-8. No monitoring/error tracking/uptime alerts.
-9. CSP browser QA and broader production abuse monitoring are not fully tested.
-10. Authenticated preview QA still required.
+3. Free invoice quota and invoice numbering have a hosted atomic path, but it is not live-enabled.
+4. No automated auth/RLS/E2E tests; unit tests now cover pure helper, API wrapper, Stripe webhook helper, signed webhook route fixture, and guardrail logic only.
+5. Legal pages are live but still need final policy review/depth.
+6. Production paid flow has not been exercised with owner approval.
+7. No monitoring/error tracking/uptime alerts.
+8. CSP browser QA and broader production abuse monitoring are not fully tested.
+9. Authenticated preview QA still required.
+10. Supabase Auth dashboard redirect allowlist must include the deployed `/auth/callback` URL before production email confirmation QA.
 
 ## 9. Security Findings
 
@@ -124,11 +125,11 @@ Required migrations need approval before live application.
 
 ## 13. UX/UI Findings
 
-Founder-level notes: the product is understandable and much more professional than the old cloned look, but users may still see friction around what happens after signup, why they must save before PDF download, how billing updates after checkout, and what to do when they hit the free limit. Dashboard and client tables need mobile improvements before a broad beta.
+Founder-level notes: the product is understandable and much more professional than the old cloned look. The auth pages and protected app pages now use the same light product direction instead of the retired dark-blue screen. Users may still see friction around what happens after signup, why they must save before PDF download, how billing updates after checkout, and what to do when they hit the free limit. Dashboard and client tables need mobile improvements before a broad beta.
 
 ## 14. Accessibility Findings
 
-Accessibility score: 72/100 after safe fixes. Improvements made include visible focus styling, alert/status roles, table header scopes, form labeling improvements, and removing nested button-in-link PDF markup on saved invoices. Remaining blockers: full keyboard QA, mobile table alternatives, form-level error descriptions, and accessibility statement.
+Accessibility score: 73/100 after safe fixes. Improvements made include visible focus styling, alert/status roles, table header scopes, form labeling improvements, app shell focus states, and removing nested button-in-link PDF markup on saved invoices. Remaining blockers: full keyboard QA, mobile table alternatives, form-level error descriptions, and accessibility statement.
 
 ## 15. Performance Findings
 
@@ -139,7 +140,7 @@ Public pages should perform well once deployed because the homepage is static an
 | Failure scenario | Current behavior | Desired behavior | Risk | Fix required | File path |
 |---|---|---|---|---|---|
 | Bad login | Auth page shows error | Same, with E2E coverage | Medium | Test | `app/login/page.tsx` |
-| Auth session missing | Proxy redirects | Same | Medium | Deploy cookie fix | `proxy.ts`, `lib/supabase.ts` |
+| Auth session missing | Proxy redirects | Same | Medium | Deploy/test cookie and callback fix | `proxy.ts`, `lib/supabase.ts`, `app/auth/callback/route.ts` |
 | Billing API missing env | Server error | Safe user message plus server log | High | Env validation/runbook | `lib/server-env.ts` |
 | Stripe webhook duplicate | Atomic event claim in local source | Same, plus preview/live Stripe replay | Medium | Deploy and replay duplicate events | `lib/stripe-webhook.ts`, `app/api/stripe/webhook/route.ts` |
 | Free limit reached | 402 + upgrade path | Same, tested | Medium | E2E test | `app/api/invoices/route.ts` |
@@ -150,11 +151,11 @@ Public pages should perform well once deployed because the homepage is static an
 
 ## 17. Testing Findings
 
-Vitest unit tests now cover pure billing/env helpers, billing route response/session builders, invoice validation, request-security helpers, Stripe webhook processing helpers including duplicate event claiming and claim release on sync failure, a signed Stripe webhook route fixture, billing API route wrappers, invoice API route wrappers including the feature-flagged atomic RPC path, and the static readiness guard. Smoke and readiness scripts cover public routes, protected redirects, selected unauthenticated API behavior, blocked stale copy, required files, security headers, and saved-only PDF export guardrails. Missing: authenticated browser E2E, Supabase RLS/cross-user tests, accessibility tests, visual regression tests, live atomic migration concurrency tests, and Stripe CLI replay on preview/live. See `QA_TEST_PLAN.md`.
+Vitest unit tests now cover pure billing/env helpers, billing route response/session builders, invoice validation, request-security helpers, Stripe webhook processing helpers including duplicate event claiming and claim release on sync failure, a signed Stripe webhook route fixture, billing API route wrappers, invoice API route wrappers including the feature-flagged atomic RPC path, and the static readiness guard. Smoke and readiness scripts cover public routes, `/auth/callback`, protected redirects, selected unauthenticated API behavior, blocked stale copy, required files, security headers, and saved-only PDF export guardrails. Missing: authenticated browser E2E, Supabase RLS/cross-user tests, accessibility tests, visual regression tests, live atomic migration concurrency tests, and Stripe CLI replay on preview/live. See `QA_TEST_PLAN.md`.
 
 ## 18. DevOps / Deployment Findings
 
-Deployment readiness: 84/100. Local lint, typecheck, build, and smoke checks pass. GitHub Actions CI passes on `main`, Vercel production deploy is Ready, and both `ihateinvoices.com` domains pass route smoke. Remaining gaps are authenticated manual QA, Supabase project/migration verification, production Stripe env/live billing verification, rollback rehearsal, and monitoring.
+Deployment readiness: 85/100. Local lint, typecheck, build, and smoke checks pass. GitHub Actions CI passes on `main`, Vercel production deploy is Ready, and both `ihateinvoices.com` domains pass route smoke. Remaining gaps are authenticated manual QA, production deploy verification for the latest auth/page sweep, production Stripe env/live billing verification, rollback rehearsal, and monitoring.
 
 ## 19. SEO / Brand Findings
 
@@ -189,6 +190,9 @@ Issues found and partly resolved: formerly unpushed critical files, stock README
 | `app/not-found.tsx`, `app/error.tsx`, `app/globals.css`, `scripts/smoke-local.mjs` | Added branded 404/global error fallbacks and smoke coverage for unknown routes | Replaces default framework failure pages with professional recovery paths | Run `npm run smoke` and visit an unknown URL. |
 | `next.config.ts`, `scripts/smoke-local.mjs` | Added enforced CSP baseline and smoke header assertion | Reduces XSS/frame/object/plugin blast radius and makes the policy deploy-checkable | Run `npm run smoke`; browser-test auth/PDF/Stripe flows on preview. |
 | GitHub/Vercel | Pushed current `main`, fixed CI lock/test issues, verified CI pass, and smoke-tested Vercel production plus both custom domains | Removes stale-production blocker and proves route availability | Review GitHub Actions run `26635694962` and production smoke output. |
+| `app/auth/callback/route.ts`, `app/signup/page.tsx`, `app/verify-email/page.tsx`, `app/login/page.tsx`, `scripts/smoke-local.mjs` | Added a Supabase auth callback route, moved signup/resend email redirects through it, and smoke-covered the missing-code redirect | Prevents email confirmation links from landing directly on a protected route before SSR cookies are exchanged | Run `npm run smoke`; perform real signup/email confirmation QA. |
+| `components/AppPageShell.tsx`, `app/dashboard/page.tsx`, `app/clients/page.tsx`, `app/invoice/new/page.tsx`, `app/invoice/[id]/page.tsx`, `app/globals.css` | Reworked protected app pages onto a shared light product shell | Removes the retired dark-blue protected-page styling that made sign-in appear to return to the old app | Log in and inspect dashboard, clients, new invoice, and saved invoice pages. |
+| `components/PDFTemplate.tsx` | Changed the PDF accent from old blue to the current green product accent | Keeps exported invoices aligned with the refreshed app styling | Download a saved invoice PDF. |
 
 ## 22. Fixes Not Implemented Yet
 
@@ -198,7 +202,7 @@ Issues found and partly resolved: formerly unpushed critical files, stock README
 | Live Stripe setup | Requires owner approval for real money | Critical | Configure live Stripe and run controlled live test. |
 | Authenticated E2E/API/RLS tests | Requires browser/database/test-user setup | High | Add Playwright/API/RLS tests in a later phase. |
 | CSP browser QA | CSP header is implemented locally, but auth/PDF/Stripe browser flows must be checked on preview | Medium | Run preview browser QA with devtools open and adjust policy if any required flow is blocked. |
-| Sign-in/redirect stale-page sweep | User reports sign-in still reaches an old page | High | Inspect and update every auth page, redirect URL, callback path, and production alias behavior. |
+| Authenticated protected-page production QA | Source sweep is fixed locally, but a real signed-in production session is still required to prove deploy/cache/domain behavior | High | Test login after deploy and confirm dashboard, clients, new invoice, saved invoice detail, and PDF output use the current light product styling. |
 | Monitoring | Requires service choice/account | Medium | Pick Sentry/PostHog/Uptime provider. |
 
 ## 23. Path to 100% Completion
@@ -207,7 +211,7 @@ Issues found and partly resolved: formerly unpushed critical files, stock README
 
 | Priority | File/area | Difficulty | Business impact | Technical risk | Estimated effort | Acceptance criteria |
 |---|---|---|---|---|---|---|
-| P0 | Auth/invoice QA | Medium | High | Medium | 2 hrs | Test user completes signup to saved PDF. |
+| P0 | Auth/invoice QA | Medium | High | Medium | 2 hrs | Test user completes signup through `/auth/callback`, lands on current light dashboard, creates an invoice, and downloads the saved PDF. |
 | P0 | DB quota/numbering | Medium | High | High | 1-2 hrs | RPC flag is enabled after authenticated QA proves concurrent creates cannot bypass quota/numbering. |
 | P1 | Legal copy depth | Medium | High | Medium | 2-4 hrs | Founder-approved beta legal pages live. |
 | P1 | E2E smoke | Medium | High | Medium | 4-6 hrs | Auth/invoice/free-limit tests automated. |
@@ -268,6 +272,6 @@ npm run start
 
 ## 25. Final Recommendation
 
-This site is not beta-ready today until authenticated production QA passes and stale sign-in redirects/pages are eliminated. It is not production-ready for paid launch. Current score: 92/100 beta readiness, 68/100 production readiness.
+This site is not beta-ready today until authenticated production QA passes. It is not production-ready for paid launch. Current score: 94/100 beta readiness, 70/100 production readiness.
 
-Next action: sweep and correct all auth pages/redirects so sign-in cannot land on stale pages, then run authenticated production QA and configure live Production Stripe env before any paid launch.
+Next action: deploy this auth/page sweep, run authenticated production QA to prove sign-in reaches the current light dashboard and protected pages, then configure live Production Stripe env before any paid launch.

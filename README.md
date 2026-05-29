@@ -10,6 +10,7 @@ The repository folder and Vercel project may still be named `invoice-gen`, but t
 - Tailwind CSS 4 and custom CSS
 - Supabase Auth, Postgres, RLS, and SSR cookies
 - Stripe Checkout, Billing Portal, and webhooks
+- Shared branded app shell for protected dashboard, client, and invoice pages
 - React PDF for saved invoice PDF exports
 - Vercel deployment
 
@@ -59,6 +60,8 @@ GitHub Actions runs `npm ci`, `npm run verify`, `npm run readiness`, `npm run te
 
 Production serves the current public, legal, auth, billing, and webhook route surface. It is not ready for paid launch until live Stripe Product/Price/webhook/portal variables are configured for Production, Supabase migrations are confirmed live, and authenticated QA proves signup, invoice creation, quota enforcement, checkout, webhook entitlement, billing portal, cancellation, and password reset.
 
+Signup and verification emails must redirect through `/auth/callback?next=/dashboard`, not directly to `/dashboard`. The callback exchanges the Supabase code for SSR cookies before sending the user into the protected workspace, which prevents confirmation links from landing on stale or unauthenticated protected pages.
+
 Do not treat a migration file in this repo as proof that the hosted Supabase database has been changed.
 
 `INVOICE_CREATE_RPC_ENABLED` must stay `false` until authenticated invoice QA verifies the target environment. The Supabase migrations through `20260529121916_grant_create_invoice_atomic.sql` are applied to the linked hosted project, and `/api/invoices` can use the `create_invoice_atomic` RPC for quota enforcement and invoice numbering once the flag is enabled.
@@ -66,6 +69,7 @@ Do not treat a migration file in this repo as proof that the hosted Supabase dat
 ## Troubleshooting
 
 - Login loops usually mean Supabase browser auth is not writing SSR-compatible cookies or the Supabase redirect URL/domain allowlist is wrong.
+- Email confirmation links that land on an old page usually mean the deployed Supabase email redirect URL or deployed source is stale. Confirm `/auth/callback` is deployed and allowlisted in Supabase Auth URL settings.
 - Billing route `401` for unauthenticated requests is expected; authenticated billing failures usually mean missing Stripe or Supabase server env values.
 - Stripe webhook `400` without a signature is expected.
 - Missing `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_PRO_PRICE_ID`, or `STRIPE_WEBHOOK_SECRET` will break billing routes server-side.

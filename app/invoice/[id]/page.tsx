@@ -2,10 +2,10 @@
 
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, formatDate } from '@/lib/invoice-utils';
+import { AppPageShell } from '@/components/AppPageShell';
 import type { Invoice, InvoiceStatus } from '@/types/invoice';
 
 const PDFDownloadLink = dynamic(
@@ -18,10 +18,10 @@ const PDFTemplate = dynamic(() => import('@/components/PDFTemplate').then(m => (
 });
 
 const statusConfig: Record<InvoiceStatus, { label: string; bg: string; text: string }> = {
-  draft: { label: 'Draft', bg: 'rgba(107, 114, 128, 0.2)', text: '#9ca3af' },
-  sent: { label: 'Sent', bg: 'rgba(37, 99, 235, 0.2)', text: '#60a5fa' },
-  paid: { label: 'Paid', bg: 'rgba(34, 197, 94, 0.2)', text: '#86efac' },
-  overdue: { label: 'Overdue', bg: 'rgba(239, 68, 68, 0.2)', text: '#fca5a5' },
+  draft: { label: 'Draft', bg: '#eef2f7', text: '#52616f' },
+  sent: { label: 'Sent', bg: '#eef8f2', text: '#17613f' },
+  paid: { label: 'Paid', bg: '#e8f6ee', text: '#0f7a4f' },
+  overdue: { label: 'Overdue', bg: '#fff1f2', text: '#9f1239' },
 };
 
 interface PageProps {
@@ -85,15 +85,11 @@ export default function InvoiceDetailPage({ params }: PageProps) {
   if (loading) {
     return (
       <div
-        className="flex min-h-screen items-center justify-center"
-        style={{ backgroundColor: '#0a0f1e' }}
+        className="app-shell app-loading"
         role="status"
         aria-label="Loading invoice"
       >
-        <div
-          className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"
-          style={{ borderColor: '#2563eb', borderTopColor: 'transparent' }}
-        />
+        <div className="app-spinner" />
       </div>
     );
   }
@@ -103,32 +99,15 @@ export default function InvoiceDetailPage({ params }: PageProps) {
   const status = statusConfig[invoice.status];
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#0a0f1e' }}>
-      {/* Header */}
-      <header
-        className="sticky top-0 z-10"
-        style={{
-          backgroundColor: '#111827',
-          borderBottom: '1px solid #374151',
-        }}
-      >
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="text-sm transition-opacity hover:opacity-80"
-              style={{ color: '#9ca3af' }}
-            >
-              &larr; Dashboard
-            </Link>
-            <h1 className="text-lg font-bold" style={{ color: '#f9fafb' }}>
-              {invoice.invoice_number}
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Status Dropdown */}
+    <AppPageShell
+      title={invoice.invoice_number}
+      subtitle={`Invoice for ${invoice.client_name}`}
+      backHref="/dashboard"
+      width="md"
+      actions={
+        <>
             <div className="flex items-center gap-2">
-              <label htmlFor="invoice-status" className="text-xs font-medium" style={{ color: '#9ca3af' }}>
+              <label htmlFor="invoice-status" className="app-label">
                 Status:
               </label>
               <select
@@ -136,11 +115,10 @@ export default function InvoiceDetailPage({ params }: PageProps) {
                 value={invoice.status}
                 onChange={(e) => handleStatusChange(e.target.value as InvoiceStatus)}
                 disabled={updatingStatus}
-                className="rounded-lg px-3 py-1.5 text-sm font-medium"
+                className="app-input"
                 style={{
                   backgroundColor: status.bg,
                   color: status.text,
-                  border: '1px solid #374151',
                 }}
               >
                 <option value="draft">Draft</option>
@@ -154,29 +132,25 @@ export default function InvoiceDetailPage({ params }: PageProps) {
               <PDFDownloadLink
                 document={<PDFTemplate invoice={invoice} />}
                 fileName={`${invoice.invoice_number}.pdf`}
-                className="rounded-lg px-4 py-2 text-sm font-medium transition-opacity hover:opacity-80"
-                style={{ color: '#f9fafb', border: '1px solid #374151' }}
+                className="app-btn app-btn-secondary"
               >
                 {({ loading: pdfLoading }) => (
                   pdfLoading ? 'Preparing...' : 'Download PDF'
                 )}
               </PDFDownloadLink>
             )}
-          </div>
-        </div>
-      </header>
+        </>
+      }
+    >
 
-      {/* Invoice Preview */}
-      <main className="mx-auto max-w-4xl px-6 py-8">
-        <div className="rounded-xl bg-white p-10 shadow-lg">
-          {/* Header */}
+        <div className="invoice-paper">
           <div className="mb-10 flex items-start justify-between">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">INVOICE</h2>
+              <h2>INVOICE</h2>
               <p className="mt-1 text-gray-500">{invoice.invoice_number}</p>
             </div>
             <span
-              className="rounded-full px-4 py-1.5 text-sm font-medium"
+              className="app-status"
               style={{
                 backgroundColor: status.bg,
                 color: status.text,
@@ -270,7 +244,7 @@ export default function InvoiceDetailPage({ params }: PageProps) {
             )}
             <div className="flex justify-between border-t-2 border-gray-200 pt-3 text-lg font-bold">
               <span className="text-gray-900">Total</span>
-              <span style={{ color: '#2563eb' }}>{formatCurrency(invoice.total)}</span>
+              <span style={{ color: 'var(--navy)' }}>{formatCurrency(invoice.total)}</span>
             </div>
           </div>
 
@@ -286,7 +260,6 @@ export default function InvoiceDetailPage({ params }: PageProps) {
             </div>
           )}
         </div>
-      </main>
-    </div>
+    </AppPageShell>
   );
 }

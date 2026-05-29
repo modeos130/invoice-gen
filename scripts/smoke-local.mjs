@@ -18,6 +18,7 @@ const checks = [
   { method: 'GET', path: '/forgot-password', expected: [200] },
   { method: 'GET', path: '/reset-password', expected: [200] },
   { method: 'GET', path: '/verify-email', expected: [200] },
+  { method: 'GET', path: '/auth/callback', expected: [200], redirectedTo: '/login' },
   { method: 'GET', path: '/terms', expected: [200] },
   { method: 'GET', path: '/privacy', expected: [200] },
   { method: 'GET', path: '/refunds', expected: [200] },

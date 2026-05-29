@@ -37,7 +37,7 @@ export default function SignupPage() {
     }
 
     try {
-      const emailRedirectTo = `${window.location.origin}/dashboard`;
+      const emailRedirectTo = `${window.location.origin}/auth/callback?next=/dashboard`;
       const { error: authError } = await withAuthTimeout(
         supabase.auth.signUp({
           email,

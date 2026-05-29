@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, formatDate } from '@/lib/invoice-utils';
+import { AppPageShell } from '@/components/AppPageShell';
 import type { Invoice, InvoiceStatus } from '@/types/invoice';
 
 const statusConfig: Record<InvoiceStatus, { label: string; bg: string; text: string }> = {
-  draft: { label: 'Draft', bg: 'rgba(107, 114, 128, 0.2)', text: '#9ca3af' },
-  sent: { label: 'Sent', bg: 'rgba(37, 99, 235, 0.2)', text: '#60a5fa' },
-  paid: { label: 'Paid', bg: 'rgba(34, 197, 94, 0.2)', text: '#86efac' },
-  overdue: { label: 'Overdue', bg: 'rgba(239, 68, 68, 0.2)', text: '#fca5a5' },
+  draft: { label: 'Draft', bg: '#eef2f7', text: '#52616f' },
+  sent: { label: 'Sent', bg: '#eef8f2', text: '#17613f' },
+  paid: { label: 'Paid', bg: '#e8f6ee', text: '#0f7a4f' },
+  overdue: { label: 'Overdue', bg: '#fff1f2', text: '#9f1239' },
 };
 
 type BillingStatus = {
@@ -120,10 +121,10 @@ export default function DashboardPage() {
     .reduce((sum, inv) => sum + inv.total, 0);
 
   const stats = [
-    { label: 'Total Invoiced', value: totalInvoiced, color: '#f9fafb' },
-    { label: 'Paid', value: totalPaid, color: '#86efac' },
-    { label: 'Outstanding', value: totalOutstanding, color: '#60a5fa' },
-    { label: 'Overdue', value: totalOverdue, color: '#fca5a5' },
+    { label: 'Total Invoiced', value: totalInvoiced },
+    { label: 'Paid', value: totalPaid },
+    { label: 'Outstanding', value: totalOutstanding },
+    { label: 'Overdue', value: totalOverdue },
   ];
 
   async function handleSignOut() {
@@ -148,71 +149,38 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#0a0f1e' }}>
-      {/* Header */}
-      <header
-        className="sticky top-0 z-10"
-        style={{
-          backgroundColor: '#111827',
-          borderBottom: '1px solid #374151',
-        }}
-      >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <h1 className="text-xl font-bold" style={{ color: '#2563eb' }}>
-            I Hate Invoices
-          </h1>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/clients"
-              className="rounded-lg px-4 py-2 text-sm font-medium transition-opacity hover:opacity-80"
-              style={{ color: '#f9fafb', border: '1px solid #374151' }}
-            >
-              Clients
-            </Link>
-            <Link
-              href="/invoice/new"
-              className="rounded-lg px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#2563eb', color: '#f9fafb' }}
-            >
-              + New Invoice
-            </Link>
-            <button
-              onClick={handleSignOut}
-              className="rounded-lg px-4 py-2 text-sm font-medium transition-opacity hover:opacity-80"
-              style={{ color: '#9ca3af' }}
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-6 py-8">
+    <AppPageShell
+      title="Dashboard"
+      subtitle="Track invoices, clients, and billing from one workspace."
+      actions={
+        <>
+          <Link href="/clients" className="app-btn app-btn-secondary">
+            Clients
+          </Link>
+          <Link href="/invoice/new" className="app-btn app-btn-primary">
+            New Invoice
+          </Link>
+          <button onClick={handleSignOut} className="app-btn app-btn-ghost">
+            Sign Out
+          </button>
+        </>
+      }
+    >
         {notice && (
           <div
-            className="mb-6 rounded-lg px-4 py-3 text-sm font-medium"
-            style={{
-              backgroundColor: notice.tone === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-              border: notice.tone === 'success' ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(245, 158, 11, 0.35)',
-              color: notice.tone === 'success' ? '#86efac' : '#fbbf24',
-            }}
+            className={`app-alert mb-6 ${notice.tone === 'success' ? 'app-alert-success' : 'app-alert-warning'}`}
           >
             {notice.message}
           </div>
         )}
 
-        <div
-          className="mb-8 flex flex-col gap-4 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between"
-          style={{ backgroundColor: '#111827', border: '1px solid #374151' }}
-        >
+        <section className="app-card app-split mb-8">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: '#9ca3af' }}>
-              Billing
-            </p>
-            <p className="mt-1 text-lg font-semibold" style={{ color: '#f9fafb' }}>
+            <p className="app-eyebrow">Billing</p>
+            <p className="mt-1 text-lg font-semibold app-strong">
               {billing?.is_pro ? 'Pro plan active' : 'Free plan'}
             </p>
-            <p className="mt-1 text-sm" style={{ color: '#9ca3af' }}>
+            <p className="mt-1 text-sm app-muted">
               {billing?.is_pro
                 ? 'Unlimited invoices are enabled for this account.'
                 : billing
@@ -220,7 +188,7 @@ export default function DashboardPage() {
                   : 'Checking invoice usage...'}
             </p>
             {billingError && (
-              <p className="mt-2 text-sm" style={{ color: '#fca5a5' }} role="alert">
+              <p className="mt-2 text-sm" style={{ color: '#9f1239' }} role="alert">
                 {billingError}
               </p>
             )}
@@ -228,114 +196,59 @@ export default function DashboardPage() {
           <button
             onClick={() => startBillingSession(billing?.is_pro ? '/api/billing/portal' : '/api/billing/checkout')}
             disabled={billingBusy}
-            className="rounded-lg px-5 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{
-              backgroundColor: billing?.is_pro ? 'transparent' : '#2563eb',
-              border: billing?.is_pro ? '1px solid #374151' : '1px solid #2563eb',
-              color: '#f9fafb',
-            }}
+            className={`app-btn ${billing?.is_pro ? 'app-btn-secondary' : 'app-btn-primary'}`}
           >
             {billingBusy ? 'Opening...' : billing?.is_pro ? 'Manage Billing' : 'Upgrade to Pro'}
           </button>
-        </div>
+        </section>
 
-        {/* Stats */}
-        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="app-grid-4 mb-8" aria-label="Invoice totals">
           {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-xl p-5"
-              style={{
-                backgroundColor: '#111827',
-                border: '1px solid #374151',
-              }}
-            >
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+            <div key={stat.label} className="app-stat-card">
+              <p className="app-eyebrow">
                 {stat.label}
               </p>
-              <p className="mt-2 text-2xl font-bold" style={{ color: stat.color }}>
+              <p className="app-stat-value">
                 {formatCurrency(stat.value)}
               </p>
             </div>
           ))}
-        </div>
+        </section>
 
-        {/* Invoice List */}
         {loading ? (
-          <div className="flex items-center justify-center py-20" role="status" aria-label="Loading invoices">
-            <div
-              className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"
-              style={{ borderColor: '#2563eb', borderTopColor: 'transparent' }}
-            />
+          <div className="app-loading" role="status" aria-label="Loading invoices">
+            <div className="app-spinner" />
           </div>
         ) : invoices.length === 0 ? (
-          <div
-            className="flex flex-col items-center justify-center rounded-xl px-6 py-16 text-center"
-            style={{
-              backgroundColor: '#111827',
-              border: '1px solid #374151',
-            }}
-          >
-            <svg
-              className="mb-4 h-16 w-16"
-              fill="none"
-              stroke="#374151"
-              strokeWidth={1}
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <p className="mb-1 text-lg font-medium" style={{ color: '#f9fafb' }}>
-              No invoices yet
-            </p>
-            <p className="mb-6 text-sm" style={{ color: '#9ca3af' }}>
+          <section className="app-card app-empty">
+            <div className="app-empty-icon" aria-hidden="true">IH</div>
+            <h2>No invoices yet</h2>
+            <p className="app-muted">
               Create your first invoice to get started.
             </p>
-            <div className="mb-6 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-2">
+            <div className="app-check-grid">
               {[
                 'Add or select a client',
                 'Save an invoice record',
                 'Download the saved PDF',
                 'Update payment status',
               ].map((step) => (
-                <div
-                  key={step}
-                  className="rounded-lg px-4 py-3 text-sm"
-                  style={{ border: '1px solid #374151', color: '#d1d5db' }}
-                >
-                  {step}
-                </div>
+                <span key={step}>{step}</span>
               ))}
             </div>
-            <Link
-              href="/invoice/new"
-              className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#2563eb', color: '#f9fafb' }}
-            >
+            <Link href="/invoice/new" className="app-btn app-btn-primary">
               Create Invoice
             </Link>
-          </div>
+          </section>
         ) : (
-          <div
-            className="overflow-hidden rounded-xl"
-            style={{
-              backgroundColor: '#111827',
-              border: '1px solid #374151',
-            }}
-          >
-            <table className="w-full">
+          <div className="app-table-wrap">
+            <table className="app-table">
               <thead>
-                <tr style={{ borderBottom: '1px solid #374151' }}>
+                <tr>
                   {['Invoice', 'Client', 'Date', 'Due Date', 'Amount', 'Status'].map((h) => (
                     <th
                       key={h}
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-                      style={{ color: '#9ca3af' }}
                     >
                       {h}
                     </th>
@@ -346,37 +259,27 @@ export default function DashboardPage() {
                 {invoices.map((invoice) => {
                   const status = statusConfig[invoice.status];
                   return (
-                    <tr
-                      key={invoice.id}
-                      className="transition-colors"
-                      style={{ borderBottom: '1px solid #374151' }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.05)')
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor = 'transparent')
-                      }
-                    >
-                      <td className="px-6 py-4 text-sm font-medium" style={{ color: '#f9fafb' }}>
+                    <tr key={invoice.id}>
+                      <td>
                         <Link href={`/invoice/${invoice.id}`} className="hover:underline">
                           {invoice.invoice_number}
                         </Link>
                       </td>
-                      <td className="px-6 py-4 text-sm" style={{ color: '#d1d5db' }}>
+                      <td>
                         {invoice.client_name}
                       </td>
-                      <td className="px-6 py-4 text-sm" style={{ color: '#9ca3af' }}>
+                      <td>
                         {formatDate(invoice.invoice_date)}
                       </td>
-                      <td className="px-6 py-4 text-sm" style={{ color: '#9ca3af' }}>
+                      <td>
                         {formatDate(invoice.due_date)}
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium" style={{ color: '#f9fafb' }}>
+                      <td>
                         {formatCurrency(invoice.total)}
                       </td>
-                      <td className="px-6 py-4">
+                      <td>
                         <span
-                          className="inline-block rounded-full px-3 py-1 text-xs font-medium"
+                          className="app-status"
                           style={{
                             backgroundColor: status.bg,
                             color: status.text,
@@ -392,7 +295,6 @@ export default function DashboardPage() {
             </table>
           </div>
         )}
-      </main>
-    </div>
+    </AppPageShell>
   );
 }

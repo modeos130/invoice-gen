@@ -2,19 +2,20 @@
 
 ## Current Testing State
 
-Vitest unit testing is installed for pure helper and selected API wrapper coverage. Current automated checks include lint, TypeScript, production build, static readiness guard, unit tests, and route smoke checks. Unit tests cover billing helpers, billing route response/session builders, server environment helpers, invoice validation, request-security helpers, Stripe webhook processing helpers, signed Stripe webhook route fixtures, atomic webhook duplicate-event claiming, billing API route wrappers, invoice API route wrappers, the feature-flagged atomic invoice RPC path, and the static readiness guard. Authenticated E2E, accessibility, visual regression, preview Stripe replay, Supabase RLS tests, and authenticated QA of the live atomic invoice RPC path are still missing.
+Vitest unit testing is installed for pure helper and selected API wrapper coverage. Current automated checks include lint, TypeScript, production build, static readiness guard, unit tests, and route smoke checks. Unit tests cover billing helpers, billing route response/session builders, server environment helpers, invoice validation, request-security helpers, Stripe webhook processing helpers, signed Stripe webhook route fixtures, atomic webhook duplicate-event claiming, billing API route wrappers, invoice API route wrappers, the feature-flagged atomic invoice RPC path, and the static readiness guard. Route smoke now includes `/auth/callback` redirect behavior and protected-route unauthenticated redirects. Authenticated E2E, accessibility, visual regression, preview Stripe replay, Supabase RLS tests, authenticated protected-page visual QA, and authenticated QA of the live atomic invoice RPC path are still missing.
 
 ## Minimum Tests Required Before Beta
 
 | Area | Test | Acceptance criteria |
 |---|---|---|
-| Auth | Signup, email verification, login, logout, password reset | Test user can complete each flow and protected routes redirect correctly. |
+| Auth | Signup, email verification, login, logout, password reset | Test user can complete each flow, Supabase email links pass through `/auth/callback`, and protected routes redirect correctly. |
 | Clients | Add client and list clients | Client appears only for the signed-in user. |
 | Invoices | Create invoice with existing/new client | Server saves invoice, dashboard shows it, detail route opens. |
 | PDF | Download saved invoice PDF | Download is only available after saved invoice route; unsaved invoice cannot bypass quota. |
 | Free limit | Create 3 invoices as free user, attempt 4th | Fourth create returns upgrade path and no invoice is inserted. |
 | Atomic invoice create | Enable `INVOICE_CREATE_RPC_ENABLED=true` in a controlled environment and run concurrent invoice creates | Concurrent creates cannot exceed quota or duplicate invoice numbers. |
 | Billing status | Dashboard status for free/pro | Correct usage/plan appears from `/api/billing/status`. |
+| Protected page UI | Dashboard, clients, new invoice, saved invoice detail | Authenticated pages use the current light app shell and do not render the retired dark-blue page styling. |
 | Public routes | `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`, `/privacy`, `/refunds` | All return `200` on preview. |
 | 404 fallback | Unknown route such as `/definitely-missing` | Returns `404` with the branded not-found page. |
 | Legal links | Footer/auth links | Links resolve and display Booman Systems LLC contact info configured in `lib/company.ts`. |
@@ -63,7 +64,7 @@ npm run test:a11y
 
 ## Static Readiness Guard
 
-`npm run readiness` checks that release-critical files exist, runtime copy does not reintroduce blocked stale language, and the new invoice page cannot download an unsaved PDF. It is not a substitute for authenticated E2E or Supabase RLS tests.
+`npm run readiness` checks that release-critical files exist, runtime copy does not reintroduce blocked stale language, and the new invoice page cannot download an unsaved PDF. It is not a substitute for authenticated E2E, protected-page visual QA, or Supabase RLS tests.
 
 ## Database Migration QA
 

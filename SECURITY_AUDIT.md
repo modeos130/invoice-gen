@@ -45,6 +45,7 @@ Security is acceptable for controlled internal testing after authenticated QA pa
 - Service-role key usage is server-only in inspected code.
 - Browser Supabase client now uses SSR-compatible auth cookies.
 - Login redirect stays on same-site relative paths.
+- Supabase email verification now routes through a server callback that exchanges the auth code before redirecting to a same-site relative path.
 - A feature-flagged atomic invoice RPC path is prepared locally and covered by route-wrapper unit tests.
 - Enforced CSP baseline is configured and smoke-checked on the root route.
 

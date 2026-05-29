@@ -22,7 +22,7 @@ export default function VerifyEmailPage() {
           type: 'signup',
           email,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
           },
         }),
         'Verification resend timed out. Check your connection and try again.',

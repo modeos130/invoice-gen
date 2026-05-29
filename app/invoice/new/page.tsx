@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, formatDate } from '@/lib/invoice-utils';
+import { AppPageShell } from '@/components/AppPageShell';
 import type { Client, LineItem } from '@/types/invoice';
 
 function generateId(): string {
@@ -191,64 +191,28 @@ export default function NewInvoicePage() {
     window.location.href = result.url;
   }
 
-  const inputStyle = {
-    backgroundColor: '#0a0f1e',
-    border: '1px solid #374151',
-    color: '#f9fafb',
-  };
-
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#0a0f1e' }}>
-      {/* Header */}
-      <header
-        className="sticky top-0 z-10"
-        style={{
-          backgroundColor: '#111827',
-          borderBottom: '1px solid #374151',
-        }}
-      >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="text-sm transition-opacity hover:opacity-80"
-              style={{ color: '#9ca3af' }}
-            >
-              &larr; Dashboard
-            </Link>
-            <h1 className="text-lg font-bold" style={{ color: '#f9fafb' }}>
-              New Invoice
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <span
-              className="rounded-lg px-4 py-2 text-sm font-medium"
-              style={{ color: '#9ca3af', border: '1px solid #374151' }}
-            >
-              Save first to download PDF
-            </span>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="rounded-lg px-6 py-2 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: '#2563eb', color: '#f9fafb' }}
-            >
-              {saving ? 'Saving...' : 'Save Invoice'}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-6 py-8">
+    <AppPageShell
+      title="New Invoice"
+      subtitle="Build, save, and then download the invoice PDF from the saved record."
+      backHref="/dashboard"
+      actions={
+        <>
+          <span className="app-pill">Save first to download PDF</span>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="app-btn app-btn-primary"
+          >
+            {saving ? 'Saving...' : 'Save Invoice'}
+          </button>
+        </>
+      }
+    >
         {error && (
           <div
             role="alert"
-            className="mb-6 flex flex-col gap-3 rounded-lg px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-            style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#fca5a5',
-            }}
+            className="app-alert app-alert-error mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
           >
             <span>{error}</span>
             {limitReached && (
@@ -256,8 +220,7 @@ export default function NewInvoicePage() {
                 type="button"
                 onClick={handleUpgrade}
                 disabled={billingBusy}
-                className="rounded-lg px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
-                style={{ backgroundColor: '#2563eb', color: '#f9fafb' }}
+                className="app-btn app-btn-primary"
               >
                 {billingBusy ? 'Opening...' : 'Upgrade to Pro'}
               </button>
@@ -265,23 +228,15 @@ export default function NewInvoicePage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          {/* Form Column */}
-          <div className="space-y-6">
-            {/* Invoice Details */}
-            <div
-              className="rounded-xl p-6"
-              style={{
-                backgroundColor: '#111827',
-                border: '1px solid #374151',
-              }}
-            >
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+        <div className="app-form-layout">
+          <div className="app-form-stack">
+            <section className="app-card">
+              <h2 className="mb-4">
                 Invoice Details
               </h2>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div>
-                  <label htmlFor="invoice-number" className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
+              <div className="app-field-grid app-field-grid-3">
+                <div className="app-field">
+                  <label htmlFor="invoice-number" className="app-label">
                     Invoice Number
                   </label>
                   <input
@@ -289,12 +244,11 @@ export default function NewInvoicePage() {
                     type="text"
                     value={invoiceNumber}
                     readOnly
-                    className="w-full rounded-lg px-3 py-2 text-sm"
-                    style={{ ...inputStyle, opacity: 0.7 }}
+                    className="app-input"
                   />
                 </div>
-                <div>
-                  <label htmlFor="invoice-date" className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
+                <div className="app-field">
+                  <label htmlFor="invoice-date" className="app-label">
                     Invoice Date
                   </label>
                   <input
@@ -302,12 +256,11 @@ export default function NewInvoicePage() {
                     type="date"
                     value={invoiceDate}
                     onChange={(e) => setInvoiceDate(e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-sm"
-                    style={inputStyle}
+                    className="app-input"
                   />
                 </div>
-                <div>
-                  <label htmlFor="due-date" className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
+                <div className="app-field">
+                  <label htmlFor="due-date" className="app-label">
                     Due Date
                   </label>
                   <input
@@ -315,22 +268,14 @@ export default function NewInvoicePage() {
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-sm"
-                    style={inputStyle}
+                    className="app-input"
                   />
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Client */}
-            <div
-              className="rounded-xl p-6"
-              style={{
-                backgroundColor: '#111827',
-                border: '1px solid #374151',
-              }}
-            >
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+            <section className="app-card">
+              <h2 className="mb-4">
                 Client
               </h2>
               <div className="mb-4">
@@ -338,8 +283,7 @@ export default function NewInvoicePage() {
                   aria-label="Select client"
                   value={showNewClient ? '__new__' : selectedClientId}
                   onChange={(e) => handleClientSelect(e.target.value)}
-                  className="w-full rounded-lg px-3 py-2 text-sm"
-                  style={inputStyle}
+                  className="app-input"
                 >
                   <option value="">Select a client...</option>
                   {clients.map((client) => (
@@ -352,9 +296,9 @@ export default function NewInvoicePage() {
               </div>
 
               {(showNewClient || selectedClientId) && (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="client-name" className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
+                <div className="app-field-grid app-field-grid-2">
+                  <div className="app-field">
+                    <label htmlFor="client-name" className="app-label">
                       Name *
                     </label>
                     <input
@@ -363,13 +307,12 @@ export default function NewInvoicePage() {
                       maxLength={140}
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
-                      className="w-full rounded-lg px-3 py-2 text-sm"
-                      style={inputStyle}
+                      className="app-input"
                       readOnly={!showNewClient}
                     />
                   </div>
-                  <div>
-                    <label htmlFor="client-email" className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
+                  <div className="app-field">
+                    <label htmlFor="client-email" className="app-label">
                       Email
                     </label>
                     <input
@@ -378,13 +321,12 @@ export default function NewInvoicePage() {
                       maxLength={254}
                       value={clientEmail}
                       onChange={(e) => setClientEmail(e.target.value)}
-                      className="w-full rounded-lg px-3 py-2 text-sm"
-                      style={inputStyle}
+                      className="app-input"
                       readOnly={!showNewClient}
                     />
                   </div>
-                  <div className="sm:col-span-2">
-                    <label htmlFor="client-address" className="block text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
+                  <div className="app-field sm:col-span-2">
+                    <label htmlFor="client-address" className="app-label">
                       Address
                     </label>
                     <textarea
@@ -393,39 +335,30 @@ export default function NewInvoicePage() {
                       value={clientAddress}
                       onChange={(e) => setClientAddress(e.target.value)}
                       rows={2}
-                      className="w-full rounded-lg px-3 py-2 text-sm resize-none"
-                      style={inputStyle}
+                      className="app-input app-textarea"
                       readOnly={!showNewClient}
                     />
                   </div>
                 </div>
               )}
-            </div>
+            </section>
 
-            {/* Line Items */}
-            <div
-              className="rounded-xl p-6"
-              style={{
-                backgroundColor: '#111827',
-                border: '1px solid #374151',
-              }}
-            >
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+            <section className="app-card">
+              <h2 className="mb-4">
                 Line Items
               </h2>
               <div className="space-y-3">
-                {/* Header */}
-                <div className="grid grid-cols-12 gap-2 text-xs font-medium" style={{ color: '#9ca3af' }}>
-                  <div className="col-span-5">Description</div>
-                  <div className="col-span-2">Qty</div>
-                  <div className="col-span-2">Rate</div>
-                  <div className="col-span-2">Amount</div>
-                  <div className="col-span-1" />
+                <div className="line-item-grid line-item-header">
+                  <div>Description</div>
+                  <div>Qty</div>
+                  <div>Rate</div>
+                  <div>Amount</div>
+                  <div />
                 </div>
 
                 {lineItems.map((item, index) => (
-                  <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
-                    <div className="col-span-5">
+                  <div key={item.id} className="line-item-grid">
+                    <div>
                       <input
                         aria-label={`Line item ${index + 1} description`}
                         type="text"
@@ -433,11 +366,10 @@ export default function NewInvoicePage() {
                         placeholder="Description"
                         value={item.description}
                         onChange={(e) => updateLineItem(index, 'description', e.target.value)}
-                        className="w-full rounded-lg px-3 py-2 text-sm"
-                        style={inputStyle}
+                        className="app-input"
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div>
                       <input
                         aria-label={`Line item ${index + 1} quantity`}
                         type="number"
@@ -445,11 +377,10 @@ export default function NewInvoicePage() {
                         max="100000"
                         value={item.quantity}
                         onChange={(e) => updateLineItem(index, 'quantity', e.target.value)}
-                        className="w-full rounded-lg px-3 py-2 text-sm"
-                        style={inputStyle}
+                        className="app-input"
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div>
                       <input
                         aria-label={`Line item ${index + 1} rate`}
                         type="number"
@@ -458,21 +389,19 @@ export default function NewInvoicePage() {
                         step="0.01"
                         value={item.rate}
                         onChange={(e) => updateLineItem(index, 'rate', e.target.value)}
-                        className="w-full rounded-lg px-3 py-2 text-sm"
-                        style={inputStyle}
+                        className="app-input"
                       />
                     </div>
-                    <div className="col-span-2">
-                      <p className="px-3 py-2 text-sm" style={{ color: '#f9fafb' }}>
+                    <div>
+                      <p className="px-1 py-2 text-sm app-strong">
                         {formatCurrency(item.amount)}
                       </p>
                     </div>
-                    <div className="col-span-1 text-center">
+                    <div>
                       <button
                         onClick={() => removeLineItem(index)}
                         disabled={lineItems.length === 1}
-                        className="text-sm transition-opacity hover:opacity-80 disabled:opacity-30"
-                        style={{ color: '#ef4444' }}
+                        className="app-icon-danger"
                         aria-label="Remove line item"
                       >
                         &times;
@@ -484,24 +413,19 @@ export default function NewInvoicePage() {
 
               <button
                 onClick={addLineItem}
-                className="mt-4 rounded-lg px-4 py-2 text-sm font-medium transition-opacity hover:opacity-80"
-                style={{ color: '#2563eb', border: '1px solid #374151' }}
+                className="app-btn app-btn-secondary mt-4"
               >
-                + Add Line Item
+                Add Line Item
               </button>
 
-              {/* Totals */}
-              <div
-                className="mt-6 space-y-2 border-t pt-4"
-                style={{ borderColor: '#374151' }}
-              >
-                <div className="flex justify-between text-sm">
-                  <span style={{ color: '#9ca3af' }}>Subtotal</span>
-                  <span style={{ color: '#f9fafb' }}>{formatCurrency(subtotal)}</span>
+              <div className="mt-6 space-y-2 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
+                <div className="app-total-row text-sm">
+                  <span className="app-muted">Subtotal</span>
+                  <span className="app-strong">{formatCurrency(subtotal)}</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                <div className="app-total-row text-sm">
                   <div className="flex items-center gap-2">
-                    <span style={{ color: '#9ca3af' }}>Tax Rate</span>
+                    <span className="app-muted">Tax Rate</span>
                     <input
                       aria-label="Tax rate percentage"
                       type="number"
@@ -509,29 +433,21 @@ export default function NewInvoicePage() {
                       step="0.1"
                       value={taxRate}
                       onChange={(e) => setTaxRate(Number(e.target.value) || 0)}
-                      className="w-16 rounded px-2 py-1 text-sm text-right"
-                      style={inputStyle}
+                      className="app-input w-16 text-right"
                     />
-                    <span style={{ color: '#9ca3af' }}>%</span>
+                    <span className="app-muted">%</span>
                   </div>
-                  <span style={{ color: '#f9fafb' }}>{formatCurrency(taxAmount)}</span>
+                  <span className="app-strong">{formatCurrency(taxAmount)}</span>
                 </div>
-                <div className="flex justify-between text-base font-bold pt-2 border-t" style={{ borderColor: '#374151' }}>
-                  <span style={{ color: '#f9fafb' }}>Total</span>
-                  <span style={{ color: '#2563eb' }}>{formatCurrency(total)}</span>
+                <div className="app-total-row border-t pt-2 text-base" style={{ borderColor: 'var(--border)' }}>
+                  <strong>Total</strong>
+                  <span className="app-total-value">{formatCurrency(total)}</span>
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Notes */}
-            <div
-              className="rounded-xl p-6"
-              style={{
-                backgroundColor: '#111827',
-                border: '1px solid #374151',
-              }}
-            >
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+            <section className="app-card">
+              <h2 className="mb-4">
                 Notes
               </h2>
               <textarea
@@ -541,22 +457,19 @@ export default function NewInvoicePage() {
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
                 placeholder="Payment terms, thank you message, etc."
-                className="w-full rounded-lg px-3 py-2 text-sm resize-none"
-                style={inputStyle}
+                className="app-input app-textarea"
               />
-            </div>
+            </section>
           </div>
 
-          {/* Preview Column */}
           <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="rounded-xl bg-white p-8 shadow-lg">
-              {/* Invoice Preview */}
+            <div className="invoice-paper">
               <div className="mb-8 flex items-start justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">INVOICE</h2>
+                  <h2>INVOICE</h2>
                   <p className="mt-1 text-sm text-gray-500">{invoiceNumber}</p>
                 </div>
-                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                <span className="app-status" style={{ backgroundColor: '#eef2f7', color: '#52616f' }}>
                   Draft
                 </span>
               </div>
@@ -660,7 +573,6 @@ export default function NewInvoicePage() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+    </AppPageShell>
   );
 }

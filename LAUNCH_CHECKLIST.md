@@ -7,16 +7,19 @@
 - [ ] Confirm local `npm run readiness` and `npm run smoke` pass before preview deploy.
 - [ ] Deploy the current source to a preview URL.
 - [ ] Confirm preview returns `200` for `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`, `/privacy`, `/refunds`.
+- [ ] Confirm preview `/auth/callback` without a code redirects safely to `/login`.
 - [ ] Confirm preview returns `404` with branded fallback UI for an unknown route.
 - [ ] Confirm preview returns `401` for unauthenticated `/api/billing/status`.
 - [ ] Confirm preview Stripe webhook returns `400` without a Stripe signature.
 - [ ] Confirm CSP is present and does not break signup, dashboard, PDF download, checkout redirect, or billing portal.
-- [ ] Run signup, email verification, login, logout, password reset.
+- [ ] Run signup, email verification through `/auth/callback`, login, logout, password reset.
+- [ ] Confirm successful sign-in lands on the current light dashboard, not the retired dark-blue page.
 - [ ] Add a client.
 - [ ] Create saved invoices until the free limit is hit.
 - [ ] Enable `INVOICE_CREATE_RPC_ENABLED=true` in a controlled environment and verify concurrent invoice creates.
 - [ ] Confirm unsaved invoice PDF download is not available.
 - [ ] Download a saved invoice PDF.
+- [ ] Confirm protected dashboard, clients, new invoice, saved invoice detail, and PDF output use the current product styling.
 - [ ] Confirm dashboard billing status and upgrade button behavior.
 - [ ] Verify legal pages include current company/contact data from `lib/company.ts`.
 

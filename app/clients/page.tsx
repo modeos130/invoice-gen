@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { AppPageShell } from '@/components/AppPageShell';
 import type { Client } from '@/types/invoice';
 
 interface ClientWithCount extends Client {
@@ -124,86 +124,43 @@ export default function ClientsPage() {
     fetchClients();
   }
 
-  const inputStyle = {
-    backgroundColor: '#0a0f1e',
-    border: '1px solid #374151',
-    color: '#f9fafb',
-  };
-
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#0a0f1e' }}>
-      {/* Header */}
-      <header
-        className="sticky top-0 z-10"
-        style={{
-          backgroundColor: '#111827',
-          borderBottom: '1px solid #374151',
-        }}
-      >
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="text-sm transition-opacity hover:opacity-80"
-              style={{ color: '#9ca3af' }}
-            >
-              &larr; Dashboard
-            </Link>
-            <h1 className="text-lg font-bold" style={{ color: '#f9fafb' }}>
-              Clients
-            </h1>
-          </div>
-          <button
-            onClick={() => {
-              resetForm();
-              setShowForm(!showForm);
-            }}
-            className="rounded-lg px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
-            style={{ backgroundColor: '#2563eb', color: '#f9fafb' }}
-          >
-            {showForm ? 'Cancel' : '+ Add Client'}
-          </button>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-5xl px-6 py-8">
-        {/* Add Client Form */}
+    <AppPageShell
+      title="Clients"
+      subtitle="Keep client details ready before creating invoices."
+      backHref="/dashboard"
+      actions={
+        <button
+          onClick={() => {
+            resetForm();
+            setShowForm(!showForm);
+          }}
+          className={`app-btn ${showForm ? 'app-btn-secondary' : 'app-btn-primary'}`}
+        >
+          {showForm ? 'Cancel' : 'Add Client'}
+        </button>
+      }
+      width="lg"
+    >
         {showForm && (
-          <div
-            className="mb-8 rounded-xl p-6"
-            style={{
-              backgroundColor: '#111827',
-              border: '1px solid #374151',
-            }}
-          >
-            <h2
-              className="mb-4 text-sm font-semibold uppercase tracking-wider"
-              style={{ color: '#9ca3af' }}
-            >
-              New Client
-            </h2>
+          <section className="app-card mb-8">
+            <h2 className="mb-4">New Client</h2>
 
             {error && (
               <div
                 role="alert"
-                className="mb-4 rounded-lg px-4 py-3 text-sm"
-                style={{
-                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#fca5a5',
-                }}
+                className="app-alert app-alert-error mb-4"
               >
                 {error}
               </div>
             )}
 
             <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
+              <div className="app-field-grid app-field-grid-2">
+                <div className="app-field">
                   <label
                     htmlFor="client-name"
-                    className="block text-xs font-medium mb-1"
-                    style={{ color: '#9ca3af' }}
+                    className="app-label"
                   >
                     Name *
                   </label>
@@ -214,16 +171,14 @@ export default function ClientsPage() {
                     maxLength={140}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-sm"
-                    style={inputStyle}
+                    className="app-input"
                     placeholder="Client name"
                   />
                 </div>
-                <div>
+                <div className="app-field">
                   <label
                     htmlFor="client-email"
-                    className="block text-xs font-medium mb-1"
-                    style={{ color: '#9ca3af' }}
+                    className="app-label"
                   >
                     Email
                   </label>
@@ -233,16 +188,14 @@ export default function ClientsPage() {
                     maxLength={254}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-sm"
-                    style={inputStyle}
+                    className="app-input"
                     placeholder="client@example.com"
                   />
                 </div>
-                <div>
+                <div className="app-field">
                   <label
                     htmlFor="client-phone"
-                    className="block text-xs font-medium mb-1"
-                    style={{ color: '#9ca3af' }}
+                    className="app-label"
                   >
                     Phone
                   </label>
@@ -252,16 +205,14 @@ export default function ClientsPage() {
                     maxLength={40}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-sm"
-                    style={inputStyle}
+                    className="app-input"
                     placeholder="(555) 123-4567"
                   />
                 </div>
-                <div>
+                <div className="app-field">
                   <label
                     htmlFor="client-address"
-                    className="block text-xs font-medium mb-1"
-                    style={{ color: '#9ca3af' }}
+                    className="app-label"
                   >
                     Address
                   </label>
@@ -271,8 +222,7 @@ export default function ClientsPage() {
                     maxLength={800}
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-sm"
-                    style={inputStyle}
+                    className="app-input"
                     placeholder="123 Main St, City, State"
                   />
                 </div>
@@ -281,49 +231,24 @@ export default function ClientsPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg px-6 py-2 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
-                  style={{ backgroundColor: '#2563eb', color: '#f9fafb' }}
+                  className="app-btn app-btn-primary"
                 >
                   {saving ? 'Saving...' : 'Add Client'}
                 </button>
               </div>
             </form>
-          </div>
+          </section>
         )}
 
-        {/* Client List */}
         {loading ? (
-          <div className="flex items-center justify-center py-20" role="status" aria-label="Loading clients">
-            <div
-              className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"
-              style={{ borderColor: '#2563eb', borderTopColor: 'transparent' }}
-            />
+          <div className="app-loading" role="status" aria-label="Loading clients">
+            <div className="app-spinner" />
           </div>
         ) : clients.length === 0 ? (
-          <div
-            className="flex flex-col items-center justify-center rounded-xl py-20"
-            style={{
-              backgroundColor: '#111827',
-              border: '1px solid #374151',
-            }}
-          >
-            <svg
-              className="mb-4 h-16 w-16"
-              fill="none"
-              stroke="#374151"
-              strokeWidth={1}
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-            <p className="mb-1 text-lg font-medium" style={{ color: '#f9fafb' }}>
-              No clients yet
-            </p>
-            <p className="mb-6 text-sm" style={{ color: '#9ca3af' }}>
+          <section className="app-card app-empty">
+            <div className="app-empty-icon" aria-hidden="true">CL</div>
+            <h2>No clients yet</h2>
+            <p className="app-muted">
               Add your first client to get started.
             </p>
             <button
@@ -331,29 +256,20 @@ export default function ClientsPage() {
                 resetForm();
                 setShowForm(true);
               }}
-              className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#2563eb', color: '#f9fafb' }}
+              className="app-btn app-btn-primary"
             >
               Add Client
             </button>
-          </div>
+          </section>
         ) : (
-          <div
-            className="overflow-hidden rounded-xl"
-            style={{
-              backgroundColor: '#111827',
-              border: '1px solid #374151',
-            }}
-          >
-            <table className="w-full">
+          <div className="app-table-wrap">
+            <table className="app-table">
               <thead>
-                <tr style={{ borderBottom: '1px solid #374151' }}>
+                <tr>
                   {['Name', 'Email', 'Phone', 'Invoices'].map((h) => (
                     <th
                       key={h}
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-                      style={{ color: '#9ca3af' }}
                     >
                       {h}
                     </th>
@@ -362,20 +278,17 @@ export default function ClientsPage() {
               </thead>
               <tbody>
                 {clients.map((client) => (
-                  <tr
-                    key={client.id}
-                    style={{ borderBottom: '1px solid #374151' }}
-                  >
-                    <td className="px-6 py-4 text-sm font-medium" style={{ color: '#f9fafb' }}>
+                  <tr key={client.id}>
+                    <td>
                       {client.name}
                     </td>
-                    <td className="px-6 py-4 text-sm" style={{ color: '#d1d5db' }}>
+                    <td>
                       {client.email || '\u2014'}
                     </td>
-                    <td className="px-6 py-4 text-sm" style={{ color: '#d1d5db' }}>
+                    <td>
                       {client.phone || '\u2014'}
                     </td>
-                    <td className="px-6 py-4 text-sm" style={{ color: '#9ca3af' }}>
+                    <td>
                       {client.invoice_count}
                     </td>
                   </tr>
@@ -384,7 +297,6 @@ export default function ClientsPage() {
             </table>
           </div>
         )}
-      </main>
-    </div>
+    </AppPageShell>
   );
 }
