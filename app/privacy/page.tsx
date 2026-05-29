@@ -41,7 +41,7 @@ export default function PrivacyPage() {
 
       <LegalSection title="Data Control">
         <p>
-          You can update or delete invoice and client information inside the app where controls are available. For account-level deletion or data questions, contact {companyInfo.legalName} at {companyInfo.contactEmail}.
+          For invoice, client, account-level deletion, or data questions, contact {companyInfo.legalName} at {companyInfo.contactEmail}. Some billing and transaction records may need to be retained for legal, tax, fraud-prevention, dispute, or service-integrity reasons.
         </p>
       </LegalSection>
 

@@ -2,7 +2,7 @@
 
 I Hate Invoices is a lightweight invoicing SaaS for independent workers and small businesses. Users can sign up, manage client records, create invoices, export saved invoices as PDFs, track invoice status, and upgrade from a free monthly invoice limit to a Pro subscription.
 
-The repository folder and Vercel project may still be named `invoice-gen`, but the customer-facing product is **I Hate Invoices** at `ihateinvoices.com`.
+The repository folder and GitHub repository are still named `invoice-gen`, but the Vercel project has been renamed to `ihateinvoices` and the customer-facing product is **I Hate Invoices** at `ihateinvoices.com`.
 
 ## Stack
 
@@ -58,7 +58,7 @@ GitHub Actions runs `npm ci`, `npm run verify`, `npm run readiness`, `npm run te
 
 ## Production Notes
 
-Production serves the current public, legal, auth, billing, and webhook route surface. It is not ready for paid launch until live Stripe Product/Price/webhook/portal variables are configured for Production, Supabase migrations are confirmed live, and authenticated QA proves signup, invoice creation, quota enforcement, checkout, webhook entitlement, billing portal, cancellation, and password reset.
+Production serves the current public, legal, auth, billing, and webhook route surface on `https://www.ihateinvoices.com`. Live Stripe Product/Price/webhook/portal variables are configured in Vercel Production, and the owner completed a live Pro checkout, billing portal open, invoice creation, status update, and PDF download test. Remaining launch checks are final owner/legal review, any desired test-data cleanup, delete/archive product decisions, and ongoing production log monitoring.
 
 Signup and verification emails must redirect through `/auth/callback?next=/dashboard`, not directly to `/dashboard`. The callback exchanges the Supabase code for SSR cookies before sending the user into the protected workspace, which prevents confirmation links from landing on stale or unauthenticated protected pages.
 

@@ -1,17 +1,30 @@
 # I Hate Invoices Launch Readiness Handoff
 
-Date: 2026-05-28
+Date: 2026-05-29
 Repo: `/Users/booman/projects/invoice-gen`
 Production URL: `https://www.ihateinvoices.com/`
-Latest preview URL: `https://invoice-ilmx4sh48-admin-26436872s-projects.vercel.app`
-Stable preview alias: `https://invoice-gen-admin-modeos-admin-26436872s-projects.vercel.app`
-Vercel project: `invoice-gen` (`prj_o9DBq9j0eoTxju9LtAVezlj2jdWU`)
+Latest production deployment: `https://www.ihateinvoices.com/`
+Historical preview alias: `https://invoice-gen-admin-modeos-admin-26436872s-projects.vercel.app`
+Vercel project: `ihateinvoices`
+
+## Current Status Update - 2026-05-29
+
+This section supersedes older preview-only revenue notes below.
+
+- Production domains are live: `https://www.ihateinvoices.com/` and `https://ihateinvoices.com/`.
+- The Vercel project has been renamed from `invoice-gen` to `ihateinvoices`.
+- Live Stripe Product/Price/webhook/portal environment values are configured in Vercel Production.
+- Owner live QA completed: signup/login, client creation, invoice creation, dashboard update, Pro checkout, Pro entitlement, billing portal open, saved invoice view, status update, and saved PDF download.
+- Production error-log check after live QA returned no Vercel error logs.
+- Public route check passed for `/`, `/login`, `/signup`, `/privacy`, `/terms`, `/refunds`, `/robots.txt`, and `/sitemap.xml`.
+- Current company/contact/location copy was checked against `https://boomansystems.com/contact/` on 2026-05-29 and matches `Booman Systems LLC`, `admin@modeos.app`, and `Arizona LLC operating from Maryland`.
+- Remaining non-code launch decisions: final legal review, whether to delete/archive owner test data, whether to add user-facing delete/archive controls for invoices and clients, and key rotation/removal for any old unused Vercel/Stripe values after confirming they are not used elsewhere.
 
 ## Verdict
 
-Not production revenue-ready yet. Preview is deployed and smoke-tested.
+Production revenue flow has passed an owner live checkout smoke test, but the app still needs final product cleanup before a broad public launch.
 
-The app is live, reachable, and now passes local lint/build after the audit fixes in this working tree. The revenue plumbing has been implemented in code: Stripe Checkout, Stripe Customer Portal, webhook-driven billing profiles, and server-side free-tier invoice enforcement. A separate I Hate Invoices test-mode Stripe Product/Price now exists, preview/development Vercel env vars are wired to that test price, the live Supabase billing migration has been applied, Supabase Auth redirect URLs are configured, and the preview Stripe webhook is configured and proven with a signed test event. It is still not ready to take real money until live Stripe billing is configured and a controlled authenticated subscription QA pass is completed.
+The app is live, reachable, and passes the local and CI validation gates recorded below. The revenue plumbing has been implemented in code and verified in production with a real owner checkout: Stripe Checkout, Stripe Customer Portal, webhook-driven billing profiles, and server-side free-tier invoice enforcement. It should still be treated as a controlled beta until final legal review, test-data cleanup decisions, and delete/archive expectations are settled.
 
 ## Product Surface
 
@@ -272,42 +285,29 @@ The app is live, reachable, and now passes local lint/build after the audit fixe
 - Added legal/support pages at `/terms`, `/privacy`, and `/refunds`
 - Added footer legal/support links and signup Terms/Privacy acknowledgement
 
-## Blockers Before Revenue Launch
+## Remaining Launch Cleanup
 
-1. Stripe must be configured outside the code.
-   - Test-mode Product/Price is complete for preview/development.
-   - Test-mode webhook endpoint and webhook secret are complete for preview/development.
-   - Production still needs a confirmed live Stripe account/key, live recurring Price, production webhook endpoint, and production webhook signing secret.
-   - Set production `STRIPE_SECRET_KEY`, `STRIPE_PRO_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` in Vercel only after live Stripe ownership is confirmed.
-   - Configure the production webhook destination to `/api/stripe/webhook`.
-   - Test-mode Customer Portal settings are complete; production Customer Portal settings still need live Stripe configuration.
+1. Final legal/compliance review is still required before broad public promotion.
+   - `/terms`, `/privacy`, and `/refunds` exist.
+   - Site company/contact copy matches the current public Booman Systems LLC source site.
+   - A lawyer or owner-approved policy review should confirm subscription, cancellation, refund, privacy, and business-contact language before wide launch.
 
-2. Free-vs-Pro enforcement is implemented in code but not proven live.
-   - `/api/invoices` enforces `3 invoices/month` for non-Pro accounts before insert.
-   - Needs an authenticated test user against the migrated production database.
+2. Delete/archive behavior still needs a product decision.
+   - Current production testing created real clients/invoices.
+   - Code audit on 2026-05-29 confirmed there are no invoice/client delete, archive, restore, or purge controls.
+   - Adding them should be treated as a product and data-integrity change, not a blind cleanup.
 
-3. Database source of truth needs post-migration QA.
-   - Live REST checks show the previous required tables/columns exist.
-   - The new billing tables and policies are captured in `supabase/migrations/20260523095504_add_billing_subscriptions.sql`.
-   - This migration has now been applied live through Supabase SQL Editor.
-   - `SUPABASE_SERVICE_ROLE_KEY` is set in Vercel.
-   - Required next proof: authenticated preview QA must create invoices against the migrated production database and exercise billing status reads.
+3. Old key cleanup still needs confirmation.
+   - Live Stripe production values are configured and working.
+   - Any older Vercel/Stripe keys should only be removed or rotated after confirming they are not used by another project.
 
-4. Auth/account recovery is implemented locally but not proven live.
-   - Signup/login exists and email verification is enabled.
-   - `/forgot-password` and `/reset-password` are present locally.
-   - Supabase Auth Site URL is now `https://www.ihateinvoices.com`.
-   - Supabase Auth redirect allowlist now includes production reset-password, Vercel preview reset-password, and Vercel preview wildcard URLs.
-   - Required next proof: live/preview password-reset QA with a real test account.
+4. Password reset should still receive one owner QA pass.
+   - Signup/login and authenticated workspace routing have been proven live.
+   - Password reset routes exist and are allowlisted, but a real reset-email pass should be confirmed before broad public launch.
 
-5. Legal/compliance pages are implemented locally but need business verification.
-   - `/terms`, `/privacy`, and `/refunds` now exist.
-   - Site company/contact copy now uses the confirmed public Booman Systems LLC records from `boomansystems.com`: `Booman Systems LLC`, `Arizona limited liability company`, `May 15, 2026`, `admin@modeos.app`, `Available upon request`, and `Arizona LLC operating from Maryland`.
-   - Final legal review is still recommended before accepting paid subscriptions.
-
-6. Paid production UX has not been verified.
-   - I did not create a real account or paid subscription.
-   - Required user test: signup, verify email, login, add client, create invoice, hit free limit, upgrade in Stripe test mode, webhook grants Pro, create unlimited invoice, download PDF, open portal, cancel, webhook removes Pro entitlement.
+5. Monitoring remains lightweight.
+   - Vercel error logs are clean after live QA.
+   - There is no dedicated error tracker or uptime monitor documented yet.
 
 ## Required Environment Variables
 
@@ -315,26 +315,26 @@ The app is live, reachable, and now passes local lint/build after the audit fixe
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `NEXT_PUBLIC_APP_URL` - set in production
 - `SUPABASE_SERVICE_ROLE_KEY` - set in production, preview, and development
-- `STRIPE_SECRET_KEY` - set in preview/development with test key only; production not set
-- `STRIPE_PRO_PRICE_ID` - set in preview/development to the new I Hate Invoices test price; production not set
-- `STRIPE_WEBHOOK_SECRET` - set in preview/development for the test webhook endpoint; production not set
+- `STRIPE_SECRET_KEY` - set in production with the live restricted Stripe key and in non-production with test-mode values where needed
+- `STRIPE_PRO_PRICE_ID` - set in production to the live I Hate Invoices Pro recurring price and in non-production to a test price where needed
+- `STRIPE_WEBHOOK_SECRET` - set in production for the live Stripe webhook endpoint and in non-production for the test webhook endpoint where needed
 
-## Recommended Go-Live Sequence
+## Recommended Public Launch Sequence
 
-1. Commit and push the current audit and billing fixes.
-2. Run a full authenticated QA pass with a test user and Stripe test subscription.
-3. Confirm the live Stripe account/key for Booman Systems LLC, then create live Product/Price/webhook.
-4. Set production Stripe env vars.
-5. Run one real Stripe subscription test only after explicit approval.
-6. Production deploy.
-7. Post-deploy smoke: root, signup, login, dashboard redirect, authenticated invoice creation, PDF download, Stripe checkout, webhook fulfillment, customer portal, password reset, legal/footer links.
+1. Finish delete/archive audit and decide whether test production records should remain, be manually removed, or be handled through new app controls.
+2. Run one password-reset QA pass with a real account.
+3. Perform owner/legal review of `/terms`, `/privacy`, and `/refunds`.
+4. Confirm no unused old Stripe or Vercel keys remain after checking whether any other project depends on them.
+5. Run a final post-deploy smoke: root, signup, login, dashboard, authenticated invoice creation, PDF download, Stripe checkout, webhook fulfillment, customer portal, password reset, and legal/footer links.
+6. Add uptime/error monitoring if the app will be publicly promoted beyond controlled beta traffic.
 
 ## Current Readiness Score
 
-- Public website availability: 95%
-- Auth gate/readiness: 80%
-- Invoice app functionality: 75%
-- Database alignment: 85%
-- Security baseline: 80%
-- Revenue readiness: 72%
-- Overall launch-to-make-money readiness: 84%
+- Public website availability: 98%
+- Auth gate/readiness: 88%
+- Invoice app functionality: 88%
+- Database alignment: 90%
+- Security baseline: 84%
+- Revenue readiness: 90%
+- Overall controlled-beta readiness: 90%
+- Overall broad public launch readiness: 84%
