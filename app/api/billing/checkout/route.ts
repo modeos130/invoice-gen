@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBaseUrl } from '@/lib/server-env';
+import {
+  buildBillingPortalSessionParams,
+  buildProCheckoutSessionParams,
+} from '@/lib/billing-routes';
 import { rateLimitRequest, rejectCrossOriginPost } from '@/lib/request-security';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase-server';
 import { getProPriceId, getStripe } from '@/lib/stripe';
@@ -42,10 +45,9 @@ export async function POST(request: NextRequest) {
   let customerId = billingProfile?.stripe_customer_id ?? null;
 
   if (isProEntitled(billingProfile) && customerId) {
-    const portal = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: `${getBaseUrl(request.nextUrl.origin)}/dashboard`,
-    });
+    const portal = await stripe.billingPortal.sessions.create(
+      buildBillingPortalSessionParams(customerId, request.nextUrl.origin)
+    );
 
     return NextResponse.json({ url: portal.url });
   }
@@ -71,30 +73,14 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const session = await stripe.checkout.sessions.create({
-    mode: 'subscription',
-    customer: customerId,
-    client_reference_id: user.id,
-    line_items: [
-      {
-        price: getProPriceId(),
-        quantity: 1,
-      },
-    ],
-    allow_promotion_codes: true,
-    success_url: `${getBaseUrl(request.nextUrl.origin)}/dashboard?checkout=success`,
-    cancel_url: `${getBaseUrl(request.nextUrl.origin)}/dashboard?checkout=cancelled`,
-    metadata: {
-      user_id: user.id,
-      plan: 'pro',
-    },
-    subscription_data: {
-      metadata: {
-        user_id: user.id,
-        plan: 'pro',
-      },
-    },
-  });
+  const session = await stripe.checkout.sessions.create(
+    buildProCheckoutSessionParams({
+      customerId,
+      userId: user.id,
+      priceId: getProPriceId(),
+      origin: request.nextUrl.origin,
+    })
+  );
 
   return NextResponse.json({ url: session.url });
 }

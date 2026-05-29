@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBaseUrl } from '@/lib/server-env';
+import { buildBillingPortalSessionParams } from '@/lib/billing-routes';
 import { rateLimitRequest, rejectCrossOriginPost } from '@/lib/request-security';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase-server';
 import { getStripe } from '@/lib/stripe';
@@ -42,10 +42,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No Stripe customer found' }, { status: 400 });
   }
 
-  const session = await getStripe().billingPortal.sessions.create({
-    customer: billingProfile.stripe_customer_id,
-    return_url: `${getBaseUrl(request.nextUrl.origin)}/dashboard`,
-  });
+  const session = await getStripe().billingPortal.sessions.create(
+    buildBillingPortalSessionParams(billingProfile.stripe_customer_id, request.nextUrl.origin)
+  );
 
   return NextResponse.json({ url: session.url });
 }

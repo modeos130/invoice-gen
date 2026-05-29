@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { currentMonthStartIso, FREE_INVOICE_LIMIT, isProEntitled } from '@/lib/billing';
+import { currentMonthStartIso } from '@/lib/billing';
+import { buildBillingStatusPayload } from '@/lib/billing-routes';
 import type { BillingProfile } from '@/lib/billing';
 
 export async function GET() {
@@ -35,18 +36,5 @@ export async function GET() {
   }
 
   const billingProfile = (profile as BillingProfile | null) ?? null;
-  const isPro = isProEntitled(billingProfile);
-  const usedThisMonth = count ?? 0;
-
-  return NextResponse.json({
-    plan: billingProfile?.plan ?? 'free',
-    status: billingProfile?.status ?? 'free',
-    current_period_end: billingProfile?.current_period_end ?? null,
-    is_pro: isPro,
-    free_invoice_limit: FREE_INVOICE_LIMIT,
-    used_this_month: usedThisMonth,
-    remaining_this_month: isPro
-      ? null
-      : Math.max(FREE_INVOICE_LIMIT - usedThisMonth, 0),
-  });
+  return NextResponse.json(buildBillingStatusPayload(billingProfile, count ?? 0));
 }

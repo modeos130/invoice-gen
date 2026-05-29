@@ -2,7 +2,7 @@
 
 ## Current Testing State
 
-Vitest unit testing is installed for pure helper coverage. Current automated checks include lint, TypeScript, production build, static readiness guard, unit tests, and route smoke checks. Unit tests cover billing helpers, server environment helpers, invoice validation, request-security helpers, Stripe webhook processing helpers, and the static readiness guard. Integration, API, authenticated E2E, accessibility, visual regression, signed Stripe webhook fixture, and Supabase RLS tests are still missing.
+Vitest unit testing is installed for pure helper coverage. Current automated checks include lint, TypeScript, production build, static readiness guard, unit tests, and route smoke checks. Unit tests cover billing helpers, billing route response/session builders, server environment helpers, invoice validation, request-security helpers, Stripe webhook processing helpers, and the static readiness guard. Integration, API, authenticated E2E, accessibility, visual regression, signed Stripe webhook fixture, and Supabase RLS tests are still missing.
 
 ## Minimum Tests Required Before Beta
 

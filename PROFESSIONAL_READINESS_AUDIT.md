@@ -6,9 +6,9 @@ All file paths are under `/Users/booman/projects/invoice-gen` unless noted. `inv
 
 - Site name: I Hate Invoices
 - What the site does: Small-business invoice creation, client records, saved PDF export, manual payment-status tracking, and Free-to-Pro subscription billing.
-- Current estimated completion: 81% beta readiness; 56% production readiness.
-- Beta readiness score: 81/100
-- Production readiness score: 56/100
+- Current estimated completion: 82% beta readiness; 57% production readiness.
+- Beta readiness score: 82/100
+- Production readiness score: 57/100
 - Biggest strength: Coherent lightweight MVP with real auth, client/invoice data, saved PDFs, and Stripe billing routes in local source.
 - Biggest weakness: Local source and live production are not the same; production currently returns `404` for current legal and billing routes.
 - Biggest launch blocker: Current launch-critical files are untracked/undeployed, so production cannot prove legal pages, billing APIs, or Stripe webhooks.
@@ -85,9 +85,9 @@ See `STACK_INVENTORY.md`.
 | Performance | 3/5 | Needs Work | Static public route, font optimized | PDF lazy load, pagination, server data. |
 | SEO / Metadata / Social Sharing | 2.5/4 | Needs Work | Metadata/robots/sitemap added | Deploy and add richer OG asset/schema. |
 | Legal / Privacy / Compliance | 2/4 | Dangerous | Local pages exist | Production deploy and policy expansion. |
-| Testing Coverage | 2/4 | Needs Work | Vitest unit tests for billing/env/invoice/security/Stripe webhook guardrails, smoke checks, readiness guard | Add authenticated E2E/API/RLS/signed webhook tests. |
+| Testing Coverage | 2.2/4 | Needs Work | Vitest unit tests for billing/env/invoice/security/Stripe webhook/billing route guardrails, smoke checks, readiness guard | Add authenticated E2E/API/RLS/signed webhook tests. |
 
-Current beta-readiness percentage: 81%. Current production-readiness percentage: 56%. Confidence: high for local code/build/test findings; medium for live Supabase/Stripe state because hosted database and live Stripe are not fully proven in this pass.
+Current beta-readiness percentage: 82%. Current production-readiness percentage: 57%. Confidence: high for local code/build/test findings; medium for live Supabase/Stripe state because hosted database and live Stripe are not fully proven in this pass.
 
 ## 8. Critical Blockers
 
@@ -96,7 +96,7 @@ Current beta-readiness percentage: 81%. Current production-readiness percentage:
 3. Production Stripe live Product/Price/webhook/portal not configured/proven.
 4. Supabase production migration state must be verified.
 5. Free invoice quota and invoice numbering are not atomic.
-6. No automated auth/billing/RLS/E2E tests; unit tests now cover pure helper, Stripe webhook helper, and guardrail logic only.
+6. No automated auth/RLS/E2E tests; unit tests now cover pure helper, billing route helper, Stripe webhook helper, and guardrail logic only.
 7. Legal pages are not live and missing policy depth.
 8. No monitoring/error tracking/uptime alerts.
 9. CSP and broader production abuse monitoring are not fully tested.
@@ -146,7 +146,7 @@ Public pages should perform well once deployed because the homepage is static an
 
 ## 17. Testing Findings
 
-Vitest unit tests now cover pure billing/env helpers, invoice validation, request-security helpers, Stripe webhook processing helpers, and the static readiness guard. Smoke and readiness scripts cover public routes, protected redirects, selected unauthenticated API behavior, blocked stale copy, required files, security headers, and saved-only PDF export guardrails. Missing: authenticated browser E2E, API integration tests with mocked Supabase/Stripe, signed Stripe webhook fixtures, Supabase RLS/cross-user tests, accessibility tests, and visual regression tests. See `QA_TEST_PLAN.md`.
+Vitest unit tests now cover pure billing/env helpers, billing route response/session builders, invoice validation, request-security helpers, Stripe webhook processing helpers, and the static readiness guard. Smoke and readiness scripts cover public routes, protected redirects, selected unauthenticated API behavior, blocked stale copy, required files, security headers, and saved-only PDF export guardrails. Missing: authenticated browser E2E, API integration tests with mocked Supabase/Stripe, signed Stripe webhook fixtures, Supabase RLS/cross-user tests, accessibility tests, and visual regression tests. See `QA_TEST_PLAN.md`.
 
 ## 18. DevOps / Deployment Findings
 
@@ -258,6 +258,6 @@ npm run start
 
 ## 25. Final Recommendation
 
-This site is not beta-ready today until the current working tree is pushed/deployed to preview and authenticated QA passes. It is not production-ready. Current score: 81/100 beta readiness, 56/100 production readiness.
+This site is not beta-ready today until the current working tree is pushed/deployed to preview and authenticated QA passes. It is not production-ready. Current score: 82/100 beta readiness, 57/100 production readiness.
 
 Next action: finish release hygiene, deploy current source to preview, run the full authenticated QA checklist, then address the database atomicity and live Stripe blockers before any public paid launch.
