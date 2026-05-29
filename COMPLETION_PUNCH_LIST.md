@@ -2,7 +2,7 @@
 
 ## Must Fix Before Beta
 
-Completed in the current release pass: Git push, GitHub Actions CI, production deploy, public/legal/API route smoke, CSP header smoke, branded 404 smoke, hosted Supabase atomic invoice migrations, auth callback routing, and protected-page source restyling.
+Completed in the current release pass: Git push, GitHub Actions CI, production deploy, public/legal/API route smoke, CSP header smoke, branded 404 smoke, hosted Supabase atomic invoice migrations, auth callback routing, live public auth-route verification, and protected-page source restyling.
 
 | Priority | File/area | Task | Difficulty | Business impact | Technical risk | Acceptance criteria |
 |---|---|---|---|---|---|---|

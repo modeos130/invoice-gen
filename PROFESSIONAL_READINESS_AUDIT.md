@@ -14,7 +14,7 @@ All file paths are under `/Users/booman/projects/invoice-gen` unless noted. `inv
 - Biggest launch blocker: Authenticated production QA and production Stripe env values are still missing.
 - Overall recommendation: Internal testing only. Beta-ready after authenticated QA; public launch-ready after more fixes.
 
-Validation completed in this pass: `npm run test:unit` passed, `npm run readiness` passed, `npm run lint` passed, `npm run typecheck` passed, `npm run build` passed, and a local production server on port `3028` returned `/` `200`, `/auth/callback` `200 -> /login`, `/terms` `200`, `/robots.txt` `200`, `/sitemap.xml` `200`, unauthenticated `/dashboard` `200 -> /login`, unauthenticated `/api/billing/status` `401`, unsigned `/api/stripe/webhook` `400`, and invalid-origin `/api/invoices` `403`. Local browser QA verified the light auth/signup pages and redirect handling without console errors; authenticated protected-page visual QA still requires a real test user session.
+Validation completed in this pass: `npm run test:unit` passed, `npm run readiness` passed, `npm run lint` passed, `npm run typecheck` passed, `npm run build` passed, and a local production server on port `3028` returned `/` `200`, `/auth/callback` `200 -> /login`, `/terms` `200`, `/robots.txt` `200`, `/sitemap.xml` `200`, unauthenticated `/dashboard` `200 -> /login`, unauthenticated `/api/billing/status` `401`, unsigned `/api/stripe/webhook` `400`, and invalid-origin `/api/invoices` `403`. GitHub Actions passed after push. Live read-only checks confirmed `https://www.ihateinvoices.com/login` and `/signup` render the current light auth UI, `/auth/callback` redirects to `/login?auth_error=missing-code`, and `/dashboard` redirects to `/login?redirect=%2Fdashboard`. Authenticated protected-page visual QA still requires a real test user session.
 
 ## 2. Plain-English Site Description
 
@@ -155,7 +155,7 @@ Vitest unit tests now cover pure billing/env helpers, billing route response/ses
 
 ## 18. DevOps / Deployment Findings
 
-Deployment readiness: 85/100. Local lint, typecheck, build, and smoke checks pass. GitHub Actions CI passes on `main`, Vercel production deploy is Ready, and both `ihateinvoices.com` domains pass route smoke. Remaining gaps are authenticated manual QA, production deploy verification for the latest auth/page sweep, production Stripe env/live billing verification, rollback rehearsal, and monitoring.
+Deployment readiness: 85/100. Local lint, typecheck, build, and smoke checks pass. GitHub Actions CI passes on `main`, Vercel production deploy is Ready, and both `ihateinvoices.com` domains pass route smoke. Remaining gaps are authenticated manual QA of protected pages, production Stripe env/live billing verification, rollback rehearsal, and monitoring.
 
 ## 19. SEO / Brand Findings
 
@@ -274,4 +274,4 @@ npm run start
 
 This site is not beta-ready today until authenticated production QA passes. It is not production-ready for paid launch. Current score: 94/100 beta readiness, 70/100 production readiness.
 
-Next action: deploy this auth/page sweep, run authenticated production QA to prove sign-in reaches the current light dashboard and protected pages, then configure live Production Stripe env before any paid launch.
+Next action: run authenticated production QA to prove sign-in reaches the current light dashboard and protected pages, then configure live Production Stripe env before any paid launch.
