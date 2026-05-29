@@ -14,17 +14,18 @@ This section supersedes older preview-only revenue notes below.
 - Production domains are live: `https://www.ihateinvoices.com/` and `https://ihateinvoices.com/`.
 - The Vercel project has been renamed from `invoice-gen` to `ihateinvoices`.
 - Live Stripe Product/Price/webhook/portal environment values are configured in Vercel Production.
-- Owner live QA completed: signup/login, client creation, invoice creation, dashboard update, Pro checkout, Pro entitlement, billing portal open, saved invoice view, status update, and saved PDF download.
+- Owner live QA completed: signup/login, client creation, invoice creation, dashboard update, Pro checkout, Pro entitlement, billing portal open, saved invoice view, status update, saved PDF download, password reset, mobile spot-check, and invoice/client archive and restore.
+- Production monitoring baseline is deployed: `/api/health`, route smoke coverage, Vercel error-log runbook, and UptimeRobot-compatible health target.
 - Production error-log check after live QA returned no Vercel error logs.
 - Public route check passed for `/`, `/login`, `/signup`, `/privacy`, `/terms`, `/refunds`, `/robots.txt`, and `/sitemap.xml`.
 - Current company/contact/location copy was checked against `https://boomansystems.com/contact/` on 2026-05-29 and matches `Booman Systems LLC`, `admin@modeos.app`, and `Arizona LLC operating from Maryland`.
-- Remaining launch work: final legal review, deploy and live-QA archive/restore for invoices and clients, any desired test-data cleanup, and key rotation/removal for old unused Vercel/Stripe values after confirming they are not used elsewhere.
+- Remaining launch work: final owner/legal review, any desired test-data cleanup, old key rotation/removal only after confirming they are unused, and optional third-party error tracking if paid traffic increases.
 
 ## Verdict
 
-Production revenue flow has passed an owner live checkout smoke test, but the app still needs final product cleanup before a broad public launch.
+Production revenue flow has passed an owner live checkout smoke test, and the app is ready for a controlled beta / soft public launch from an engineering standpoint.
 
-The app is live, reachable, and passes the local and CI validation gates recorded below. The revenue plumbing has been implemented in code and verified in production with a real owner checkout: Stripe Checkout, Stripe Customer Portal, webhook-driven billing profiles, and server-side free-tier invoice enforcement. It should still be treated as a controlled beta until final legal review, archive/restore live QA, and test-data cleanup decisions are settled.
+The app is live, reachable, and passes the local, CI, and production route validation gates recorded below. The revenue plumbing has been implemented in code and verified in production with a real owner checkout: Stripe Checkout, Stripe Customer Portal, webhook-driven billing profiles, and server-side free-tier invoice enforcement. Broad paid promotion should still wait for final legal review and any owner cleanup decisions, but no current engineering blocker prevents controlled beta usage.
 
 ## Product Surface
 
@@ -47,6 +48,20 @@ The app is live, reachable, and passes the local and CI validation gates recorde
 
 ## Validation Performed
 
+- Final validation pass on 2026-05-29:
+  - `git status --short`: clean
+  - `npm run lint`: passed
+  - `npm run typecheck`: passed
+  - `npm run test:unit`: passed, 13 test files / 80 tests
+  - `npm run readiness`: passed
+  - `npm run build`: passed
+  - Local production `npm run smoke` against `http://127.0.0.1:3029`: passed, including `/api/health`
+  - Live production `npm run smoke` against `https://www.ihateinvoices.com`: passed, including public pages, protected redirects, billing auth guards, webhook unsigned rejection, and invalid-origin API rejection
+  - Live `/api/health`: `200`, `ok: true`, `service: ihateinvoices`, `cache-control: no-store`
+  - Vercel production `500` log query for the last 15 minutes: no logs found
+  - Latest GitHub Actions CI on `main`: success, run `26664707708`
+  - Latest Vercel production deployment: `https://ihateinvoices-nyh05hjug-admin-26436872s-projects.vercel.app`, Ready and aliased to `https://www.ihateinvoices.com`
+  - `npm audit --audit-level=low`: fails on 2 moderate advisories through Next's bundled `postcss`; current stable Next is already `16.2.6`, and npm's force fix suggests an unsafe breaking downgrade, so this is tracked as an upstream dependency advisory rather than a safe local fix.
 - `npm ci`: passed
 - `npm run lint`: passed after fixes
 - `npm run build`: passed after fixes
@@ -292,24 +307,19 @@ The app is live, reachable, and passes the local and CI validation gates recorde
    - Site company/contact copy matches the current public Booman Systems LLC source site.
    - A lawyer or owner-approved policy review should confirm subscription, cancellation, refund, privacy, and business-contact language before wide launch.
 
-2. Archive/restore behavior is implemented in source and awaiting deploy/live QA.
-   - Current production testing created real clients/invoices.
-   - Code audit on 2026-05-29 confirmed there were no invoice/client delete, archive, restore, or purge controls.
-   - Archive/restore controls have now been implemented in source as the safer launch option.
-   - The hosted Supabase database received `supabase/migrations/20260529175218_add_archive_fields.sql` on 2026-05-29 and read-only REST checks confirmed `clients.archived_at` and `invoices.archived_at`.
-   - Hard delete remains intentionally excluded from the normal user UI.
-
-3. Old key cleanup still needs confirmation.
+2. Old key cleanup still needs confirmation.
    - Live Stripe production values are configured and working.
    - Any older Vercel/Stripe keys should only be removed or rotated after confirming they are not used by another project.
 
-4. Password reset should still receive one owner QA pass.
-   - Signup/login and authenticated workspace routing have been proven live.
-   - Password reset routes exist and are allowlisted, but a real reset-email pass should be confirmed before broad public launch.
+3. Test-data cleanup is an owner decision.
+   - Production live testing created real test records and a live owner subscription path.
+   - Clean up only what you intentionally want removed; do not delete database rows or Stripe customers without a clear reason.
 
-5. Monitoring remains lightweight.
-   - Vercel error logs are clean after live QA.
-   - There is no dedicated error tracker or uptime monitor documented yet.
+4. Monitoring baseline is active, with optional future hardening.
+   - `/api/health` is live and returns `200`.
+   - UptimeRobot can monitor the homepage and `/api/health`.
+   - `PRODUCTION_MONITORING.md` documents Vercel logs, workflow triage, and rollback.
+   - Dedicated third-party error tracking such as Sentry remains optional until paid traffic increases and a privacy posture is approved.
 
 ## Required Environment Variables
 
@@ -323,21 +333,20 @@ The app is live, reachable, and passes the local and CI validation gates recorde
 
 ## Recommended Public Launch Sequence
 
-1. Deploy the matching archive/restore source now that the migration is verified.
-2. Run archive/restore QA for active and archived invoices and clients.
-3. Run one password-reset QA pass with a real account.
-4. Perform owner/legal review of `/terms`, `/privacy`, and `/refunds`.
-5. Confirm no unused old Stripe or Vercel keys remain after checking whether any other project depends on them.
-6. Run a final post-deploy smoke: root, signup, login, dashboard, authenticated invoice creation, invoice/client archive and restore, PDF download, Stripe checkout, webhook fulfillment, customer portal, password reset, and legal/footer links.
-7. Add uptime/error monitoring if the app will be publicly promoted beyond controlled beta traffic.
+1. Perform owner/legal review of `/terms`, `/privacy`, and `/refunds`.
+2. Decide whether to keep or remove test clients, test invoices, and live checkout test artifacts.
+3. Confirm no unused old Stripe or Vercel keys remain after checking whether any other project depends on them.
+4. Keep UptimeRobot monitors active for `https://www.ihateinvoices.com/` and `https://www.ihateinvoices.com/api/health`.
+5. Monitor Vercel logs, Stripe webhook delivery, Supabase auth/database logs, and support email daily during the first launch week.
+6. Add dedicated third-party error tracking later if public paid traffic increases.
 
 ## Current Readiness Score
 
-- Public website availability: 98%
-- Auth gate/readiness: 88%
-- Invoice app functionality: 88%
-- Database alignment: 90%
-- Security baseline: 84%
-- Revenue readiness: 90%
-- Overall controlled-beta readiness: 90%
-- Overall broad public launch readiness: 84%
+- Public website availability: 99%
+- Auth gate/readiness: 96%
+- Invoice app functionality: 95%
+- Database alignment: 94%
+- Security baseline: 90%
+- Revenue readiness: 94%
+- Overall controlled-beta readiness: 97%
+- Overall broad public launch readiness: 92%
