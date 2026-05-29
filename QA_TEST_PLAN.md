@@ -16,6 +16,7 @@ Vitest unit testing is installed for pure helper and selected API wrapper covera
 | Atomic invoice create | Apply `20260529090606_atomic_invoice_create.sql`, enable `INVOICE_CREATE_RPC_ENABLED=true`, run concurrent invoice creates | Concurrent creates cannot exceed quota or duplicate invoice numbers. |
 | Billing status | Dashboard status for free/pro | Correct usage/plan appears from `/api/billing/status`. |
 | Public routes | `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`, `/privacy`, `/refunds` | All return `200` on preview. |
+| 404 fallback | Unknown route such as `/definitely-missing` | Returns `404` with the branded not-found page. |
 | Legal links | Footer/auth links | Links resolve and display Booman Systems LLC contact info configured in `lib/company.ts`. |
 
 ## Minimum Tests Required Before Paid Public Launch

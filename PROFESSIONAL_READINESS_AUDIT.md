@@ -6,9 +6,9 @@ All file paths are under `/Users/booman/projects/invoice-gen` unless noted. `inv
 
 - Site name: I Hate Invoices
 - What the site does: Small-business invoice creation, client records, saved PDF export, manual payment-status tracking, and Free-to-Pro subscription billing.
-- Current estimated completion: 86% beta readiness; 61% production readiness.
-- Beta readiness score: 86/100
-- Production readiness score: 61/100
+- Current estimated completion: 87% beta readiness; 62% production readiness.
+- Beta readiness score: 87/100
+- Production readiness score: 62/100
 - Biggest strength: Coherent lightweight MVP with real auth, client/invoice data, saved PDFs, and Stripe billing routes in local source.
 - Biggest weakness: Local source and live production are not the same; production currently returns `404` for current legal and billing routes.
 - Biggest launch blocker: Current launch-critical files are untracked/undeployed, so production cannot prove legal pages, billing APIs, or Stripe webhooks.
@@ -50,6 +50,8 @@ See `STACK_INVENTORY.md`.
 | `/api/billing/checkout` | Stripe Checkout | Auth API | Supabase admin, Stripe | Builds | Live env not configured | Configure and test. |
 | `/api/billing/portal` | Stripe Customer Portal | Auth API | Supabase admin, Stripe | Builds | Portal not production-proven | Configure and test. |
 | `/api/stripe/webhook` | Stripe entitlement sync | Public Stripe-signed API | Stripe signature, Supabase admin | Builds; event claim is atomic in local source | Production 404; live duplicate replay not proven | Deploy and replay Stripe events. |
+| Unknown route | Branded not-found page | Public | None | Added and smoke-covered locally | Must deploy | Smoke preview. |
+| Global app error | Branded error boundary | Public/protected fallback | Runtime errors | Added locally | Needs browser fault injection later | Add E2E failure case. |
 | `/robots.txt` | Crawl rules | Public | `NEXT_PUBLIC_APP_URL` | Added | Must deploy | Smoke. |
 | `/sitemap.xml` | Public sitemap | Public | `NEXT_PUBLIC_APP_URL` | Added | Must deploy | Smoke. |
 
@@ -79,7 +81,7 @@ See `STACK_INVENTORY.md`.
 | Authentication / Authorization | 5/8 | Needs Work | `proxy.ts`, Supabase SSR clients | Deploy cookie fix, add E2E auth tests. |
 | Database / Data Integrity | 4.8/8 | Dangerous | RLS/schema exist; app-level input limits added; atomic invoice migration prepared | Apply/verify RPC migration, DB constraints, remaining indexes. |
 | Payment / Financial Flow | 4.3/8 | Dangerous | Stripe routes exist; duplicate webhook claiming is unit-tested | Live Stripe config, paid-flow QA, and production deploy. |
-| Error Handling / Reliability | 4/7 | Needs Work | Basic route errors | Global error/not-found UX, safe logs, retries. |
+| Error Handling / Reliability | 4.7/7 | Needs Work | Basic route errors plus branded 404/global error fallback | Safe logs, retries, deeper failure-mode E2E. |
 | UX/UI / Responsive Design | 5/7 | Good | Coherent public/auth/app UI | Mobile tables/forms, first-run checklist. |
 | Accessibility | 3.5/5 | Needs Work | Skip link, labels improved | More keyboard/mobile/table audits. |
 | Performance | 3/5 | Needs Work | Static public route, font optimized | PDF lazy load, pagination, server data. |
@@ -87,7 +89,7 @@ See `STACK_INVENTORY.md`.
 | Legal / Privacy / Compliance | 2/4 | Dangerous | Local pages exist | Production deploy and policy expansion. |
 | Testing Coverage | 2.9/4 | Needs Work | Vitest unit tests for billing/env/invoice/security/Stripe webhook/billing/invoice route guardrails, duplicate webhook claiming, atomic invoice RPC flag path, plus signed webhook route fixture | Add authenticated E2E/RLS tests, preview Stripe replay, and live migration concurrency tests. |
 
-Current beta-readiness percentage: 86%. Current production-readiness percentage: 61%. Confidence: high for local code/build/test findings; medium for live Supabase/Stripe state because hosted database and live Stripe are not fully proven in this pass.
+Current beta-readiness percentage: 87%. Current production-readiness percentage: 62%. Confidence: high for local code/build/test findings; medium for live Supabase/Stripe state because hosted database and live Stripe are not fully proven in this pass.
 
 ## 8. Critical Blockers
 
@@ -139,10 +141,12 @@ Public pages should perform well once deployed because the homepage is static an
 | Bad login | Auth page shows error | Same, with E2E coverage | Medium | Test | `app/login/page.tsx` |
 | Auth session missing | Proxy redirects | Same | Medium | Deploy cookie fix | `proxy.ts`, `lib/supabase.ts` |
 | Billing API missing env | Server error | Safe user message plus server log | High | Env validation/runbook | `lib/server-env.ts` |
-| Stripe webhook duplicate | Check then insert | Atomic once-only processing | High | DB transaction/RPC | `app/api/stripe/webhook/route.ts` |
+| Stripe webhook duplicate | Atomic event claim in local source | Same, plus preview/live Stripe replay | Medium | Deploy and replay duplicate events | `lib/stripe-webhook.ts`, `app/api/stripe/webhook/route.ts` |
 | Free limit reached | 402 + upgrade path | Same, tested | Medium | E2E test | `app/api/invoices/route.ts` |
 | Network failure on dashboard | Partial silent failures | Clear retry/error UI | Medium | Add retry states | `app/dashboard/page.tsx` |
-| Missing invoice | Redirect dashboard | Not-found message | Low | Better not-found UX | `app/invoice/[id]/page.tsx` |
+| Missing route | Branded 404 fallback | Same, smoke-covered | Low | Deploy and preview smoke | `app/not-found.tsx`, `scripts/smoke-local.mjs` |
+| Runtime app error | Branded error boundary | Same, with future fault-injection E2E | Medium | Add browser failure test later | `app/error.tsx` |
+| Missing invoice | Redirect dashboard | Invoice-specific not-found message | Low | Consider route-specific not-found later | `app/invoice/[id]/page.tsx` |
 
 ## 17. Testing Findings
 
@@ -182,6 +186,7 @@ Issues found: untracked critical files before release stabilization, stock READM
 | `tests/invoices-api-route.test.ts` | Added route-wrapper tests for the atomic RPC success and free-limit error paths | Protects the feature-flagged integration from regressions | Run `npm run test:unit`. |
 | `lib/stripe-webhook.ts` | Claims Stripe event IDs before entitlement sync and releases the claim on sync failure | Removes the local check-then-insert duplicate webhook race | Run duplicate webhook unit tests and Stripe replay in preview. |
 | `tests/stripe-webhook.test.ts`, `tests/stripe-webhook-route.test.ts` | Added duplicate-claim and claim-release coverage | Proves duplicate event delivery does not sync entitlement twice in local tests | Run `npm run test:unit -- tests/stripe-webhook.test.ts tests/stripe-webhook-route.test.ts`. |
+| `app/not-found.tsx`, `app/error.tsx`, `app/globals.css`, `scripts/smoke-local.mjs` | Added branded 404/global error fallbacks and smoke coverage for unknown routes | Replaces default framework failure pages with professional recovery paths | Run `npm run smoke` and visit an unknown URL. |
 
 ## 22. Fixes Not Implemented Yet
 
@@ -263,6 +268,6 @@ npm run start
 
 ## 25. Final Recommendation
 
-This site is not beta-ready today until the current working tree is pushed/deployed to preview and authenticated QA passes. It is not production-ready. Current score: 86/100 beta readiness, 61/100 production readiness.
+This site is not beta-ready today until the current working tree is pushed/deployed to preview and authenticated QA passes. It is not production-ready. Current score: 87/100 beta readiness, 62/100 production readiness.
 
 Next action: resolve GitHub push credentials, deploy current source to preview, run the full authenticated QA checklist, apply and verify the atomic invoice migration on preview, then address live Stripe blockers before any public paid launch.

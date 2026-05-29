@@ -277,6 +277,56 @@ select {
   color: var(--navy);
 }
 
+.fallback-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 32px 20px;
+  background:
+    linear-gradient(135deg, rgba(238, 248, 242, 0.82), rgba(255, 247, 232, 0.5)),
+    var(--off-white);
+  color: var(--charcoal);
+}
+
+.fallback-panel {
+  width: min(100%, 620px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow);
+  padding: clamp(28px, 5vw, 48px);
+}
+
+.fallback-panel > svg {
+  color: var(--gold);
+}
+
+.fallback-kicker {
+  margin: 18px 0 8px;
+  color: var(--navy);
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fallback-panel h1 {
+  max-width: 540px;
+  margin: 0;
+  color: var(--charcoal);
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 850;
+  line-height: 1.03;
+  letter-spacing: 0;
+}
+
+.fallback-panel p:not(.fallback-kicker) {
+  max-width: 520px;
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 1rem;
+}
+
 .hero-visual {
   border: 1px solid rgba(23, 32, 42, 0.1);
   border-radius: var(--radius);

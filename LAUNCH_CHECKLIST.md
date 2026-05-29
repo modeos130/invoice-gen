@@ -7,6 +7,7 @@
 - [ ] Confirm local `npm run readiness` and `npm run smoke` pass before preview deploy.
 - [ ] Deploy the current source to a preview URL.
 - [ ] Confirm preview returns `200` for `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`, `/privacy`, `/refunds`.
+- [ ] Confirm preview returns `404` with branded fallback UI for an unknown route.
 - [ ] Confirm preview returns `401` for unauthenticated `/api/billing/status`.
 - [ ] Confirm preview Stripe webhook returns `400` without a Stripe signature.
 - [ ] Run signup, email verification, login, logout, password reset.

@@ -20,6 +20,7 @@ const checks = [
   { method: 'GET', path: '/terms', expected: [200] },
   { method: 'GET', path: '/privacy', expected: [200] },
   { method: 'GET', path: '/refunds', expected: [200] },
+  { method: 'GET', path: '/definitely-missing', expected: [404] },
   { method: 'GET', path: '/robots.txt', expected: [200] },
   { method: 'GET', path: '/sitemap.xml', expected: [200] },
   { method: 'GET', path: '/dashboard', expected: [200], redirectedTo: '/login' },
