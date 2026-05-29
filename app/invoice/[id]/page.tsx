@@ -39,6 +39,7 @@ export default function InvoiceDetailPage({ params }: PageProps) {
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [updatingArchive, setUpdatingArchive] = useState(false);
+  const [pendingArchiveState, setPendingArchiveState] = useState<boolean | null>(null);
   const [archiveError, setArchiveError] = useState('');
 
   useEffect(() => {
@@ -92,11 +93,8 @@ export default function InvoiceDetailPage({ params }: PageProps) {
     if (!invoice) return;
     const action = archived ? 'archive' : 'restore';
 
-    if (!window.confirm(`Are you sure you want to ${action} ${invoice.invoice_number}?`)) {
-      return;
-    }
-
     setArchiveError('');
+    setPendingArchiveState(null);
     setUpdatingArchive(true);
 
     const response = await fetch(`/api/invoices/${invoice.id}/archive`, {
@@ -131,6 +129,7 @@ export default function InvoiceDetailPage({ params }: PageProps) {
   if (!invoice) return null;
 
   const status = statusConfig[invoice.status];
+  const pendingArchiveAction = pendingArchiveState ? 'Archive' : 'Restore';
 
   return (
     <AppPageShell
@@ -166,7 +165,7 @@ export default function InvoiceDetailPage({ params }: PageProps) {
 
             <button
               type="button"
-              onClick={() => handleArchiveChange(!invoice.archived_at)}
+              onClick={() => setPendingArchiveState(!invoice.archived_at)}
               disabled={updatingArchive}
               className="app-btn app-btn-secondary"
             >
@@ -183,6 +182,35 @@ export default function InvoiceDetailPage({ params }: PageProps) {
         {archiveError && (
           <div className="app-alert app-alert-error mb-6" role="alert">
             {archiveError}
+          </div>
+        )}
+
+        {pendingArchiveState !== null && (
+          <div
+            className="app-alert app-alert-warning mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+            role="status"
+          >
+            <span>
+              Confirm {pendingArchiveAction.toLowerCase()} for {invoice.invoice_number}?
+            </span>
+            <span className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => handleArchiveChange(pendingArchiveState)}
+                disabled={updatingArchive}
+                className="app-btn app-btn-primary"
+              >
+                {updatingArchive ? 'Saving...' : `Confirm ${pendingArchiveAction}`}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingArchiveState(null)}
+                disabled={updatingArchive}
+                className="app-btn app-btn-secondary"
+              >
+                Cancel
+              </button>
+            </span>
           </div>
         )}
 

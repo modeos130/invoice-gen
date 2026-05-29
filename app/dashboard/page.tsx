@@ -30,6 +30,11 @@ type Notice = {
   message: string;
 };
 
+type PendingArchiveInvoice = {
+  invoice: Invoice;
+  archived: boolean;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const [notice, setNotice] = useState<Notice | null>(() => {
@@ -56,6 +61,8 @@ export default function DashboardPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [showArchivedInvoices, setShowArchivedInvoices] = useState(false);
+  const [pendingArchiveInvoice, setPendingArchiveInvoice] =
+    useState<PendingArchiveInvoice | null>(null);
   const [archivingInvoiceId, setArchivingInvoiceId] = useState<string | null>(null);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [billingBusy, setBillingBusy] = useState(false);
@@ -163,10 +170,7 @@ export default function DashboardPage() {
   async function updateInvoiceArchive(invoice: Invoice, archived: boolean) {
     const action = archived ? 'archive' : 'restore';
 
-    if (!window.confirm(`Are you sure you want to ${action} ${invoice.invoice_number}?`)) {
-      return;
-    }
-
+    setPendingArchiveInvoice(null);
     setArchivingInvoiceId(invoice.id);
     const response = await fetch(`/api/invoices/${invoice.id}/archive`, {
       method: 'POST',
@@ -192,6 +196,8 @@ export default function DashboardPage() {
     setArchivingInvoiceId(null);
   }
 
+  const pendingInvoiceAction = pendingArchiveInvoice?.archived ? 'Archive' : 'Restore';
+
   return (
     <AppPageShell
       title="Dashboard"
@@ -200,7 +206,10 @@ export default function DashboardPage() {
         <>
           <button
             type="button"
-            onClick={() => setShowArchivedInvoices((current) => !current)}
+            onClick={() => {
+              setPendingArchiveInvoice(null);
+              setShowArchivedInvoices((current) => !current);
+            }}
             className="app-btn app-btn-secondary"
           >
             {showArchivedInvoices ? (
@@ -230,6 +239,41 @@ export default function DashboardPage() {
             className={`app-alert mb-6 ${notice.tone === 'success' ? 'app-alert-success' : 'app-alert-warning'}`}
           >
             {notice.message}
+          </div>
+        )}
+
+        {pendingArchiveInvoice && (
+          <div
+            className="app-alert app-alert-warning mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+            role="status"
+          >
+            <span>
+              Confirm {pendingInvoiceAction.toLowerCase()} for{' '}
+              {pendingArchiveInvoice.invoice.invoice_number}?
+            </span>
+            <span className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => updateInvoiceArchive(
+                  pendingArchiveInvoice.invoice,
+                  pendingArchiveInvoice.archived
+                )}
+                disabled={archivingInvoiceId === pendingArchiveInvoice.invoice.id}
+                className="app-btn app-btn-primary"
+              >
+                {archivingInvoiceId === pendingArchiveInvoice.invoice.id
+                  ? 'Saving...'
+                  : `Confirm ${pendingInvoiceAction}`}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingArchiveInvoice(null)}
+                disabled={archivingInvoiceId === pendingArchiveInvoice.invoice.id}
+                className="app-btn app-btn-secondary"
+              >
+                Cancel
+              </button>
+            </span>
           </div>
         )}
 
@@ -356,7 +400,10 @@ export default function DashboardPage() {
                       <td>
                         <button
                           type="button"
-                          onClick={() => updateInvoiceArchive(invoice, !showArchivedInvoices)}
+                          onClick={() => setPendingArchiveInvoice({
+                            invoice,
+                            archived: !invoice.archived_at,
+                          })}
                           disabled={archivingInvoiceId === invoice.id}
                           className="app-btn app-btn-secondary"
                         >

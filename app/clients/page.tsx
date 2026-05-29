@@ -11,6 +11,11 @@ interface ClientWithCount extends Client {
   invoice_count: number;
 }
 
+type PendingArchiveClient = {
+  client: ClientWithCount;
+  archived: boolean;
+};
+
 export default function ClientsPage() {
   const router = useRouter();
   const [clients, setClients] = useState<ClientWithCount[]>([]);
@@ -19,6 +24,8 @@ export default function ClientsPage() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [archivingClientId, setArchivingClientId] = useState<string | null>(null);
+  const [pendingArchiveClient, setPendingArchiveClient] =
+    useState<PendingArchiveClient | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -139,10 +146,7 @@ export default function ClientsPage() {
   async function updateClientArchive(client: ClientWithCount, archived: boolean) {
     const action = archived ? 'archive' : 'restore';
 
-    if (!window.confirm(`Are you sure you want to ${action} ${client.name}?`)) {
-      return;
-    }
-
+    setPendingArchiveClient(null);
     setNotice('');
     setError('');
     setArchivingClientId(client.id);
@@ -165,6 +169,8 @@ export default function ClientsPage() {
     setArchivingClientId(null);
   }
 
+  const pendingClientAction = pendingArchiveClient?.archived ? 'Archive' : 'Restore';
+
   return (
     <AppPageShell
       title="Clients"
@@ -174,7 +180,10 @@ export default function ClientsPage() {
         <>
           <button
             type="button"
-            onClick={() => setShowArchivedClients((current) => !current)}
+            onClick={() => {
+              setPendingArchiveClient(null);
+              setShowArchivedClients((current) => !current);
+            }}
             className="app-btn app-btn-secondary"
           >
             {showArchivedClients ? (
@@ -206,6 +215,40 @@ export default function ClientsPage() {
         {error && !showForm && (
           <div className="app-alert app-alert-error mb-6" role="alert">
             {error}
+          </div>
+        )}
+
+        {pendingArchiveClient && (
+          <div
+            className="app-alert app-alert-warning mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+            role="status"
+          >
+            <span>
+              Confirm {pendingClientAction.toLowerCase()} for {pendingArchiveClient.client.name}?
+            </span>
+            <span className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => updateClientArchive(
+                  pendingArchiveClient.client,
+                  pendingArchiveClient.archived
+                )}
+                disabled={archivingClientId === pendingArchiveClient.client.id}
+                className="app-btn app-btn-primary"
+              >
+                {archivingClientId === pendingArchiveClient.client.id
+                  ? 'Saving...'
+                  : `Confirm ${pendingClientAction}`}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingArchiveClient(null)}
+                disabled={archivingClientId === pendingArchiveClient.client.id}
+                className="app-btn app-btn-secondary"
+              >
+                Cancel
+              </button>
+            </span>
           </div>
         )}
 
@@ -365,7 +408,10 @@ export default function ClientsPage() {
                     <td>
                       <button
                         type="button"
-                        onClick={() => updateClientArchive(client, !showArchivedClients)}
+                        onClick={() => setPendingArchiveClient({
+                          client,
+                          archived: !client.archived_at,
+                        })}
                         disabled={archivingClientId === client.id}
                         className="app-btn app-btn-secondary"
                       >
