@@ -10,7 +10,9 @@ export const requiredFiles = [
   'app/api/billing/portal/route.ts',
   'app/api/billing/status/route.ts',
   'app/api/stripe/webhook/route.ts',
+  'app/error.tsx',
   'app/forgot-password/page.tsx',
+  'app/not-found.tsx',
   'app/reset-password/page.tsx',
   'app/terms/page.tsx',
   'app/privacy/page.tsx',
@@ -21,13 +23,16 @@ export const requiredFiles = [
   'lib/supabase-server.ts',
   'proxy.ts',
   'supabase/migrations/20260523095504_add_billing_subscriptions.sql',
+  'supabase/migrations/20260529090606_atomic_invoice_create.sql',
 ];
 
 export const runtimeFilesToScan = [
   'app/page.tsx',
   'app/layout.tsx',
+  'app/error.tsx',
   'app/login/page.tsx',
   'app/signup/page.tsx',
+  'app/not-found.tsx',
   'app/verify-email/page.tsx',
   'app/forgot-password/page.tsx',
   'app/reset-password/page.tsx',
