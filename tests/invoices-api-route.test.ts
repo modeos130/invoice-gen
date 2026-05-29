@@ -98,6 +98,9 @@ function selectQuery(table: string, _columns: string, options?: { count?: string
         error: state.monthlyCountError,
       });
     },
+    is() {
+      return chain;
+    },
     maybeSingle: async () => {
       if (table === 'billing_profiles') {
         return {

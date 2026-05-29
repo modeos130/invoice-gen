@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Archive, RotateCcw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, formatDate } from '@/lib/invoice-utils';
 import { AppPageShell } from '@/components/AppPageShell';
@@ -54,6 +55,8 @@ export default function DashboardPage() {
   });
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showArchivedInvoices, setShowArchivedInvoices] = useState(false);
+  const [archivingInvoiceId, setArchivingInvoiceId] = useState<string | null>(null);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [billingBusy, setBillingBusy] = useState(false);
   const [billingError, setBillingError] = useState('');
@@ -67,6 +70,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchInvoices() {
+      setLoading(true);
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -76,21 +80,29 @@ export default function DashboardPage() {
         return;
       }
 
-      const { data, error } = await supabase
+      const query = supabase
         .from('invoices')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id);
+
+      const archiveFilteredQuery = showArchivedInvoices
+        ? query.not('archived_at', 'is', null)
+        : query.is('archived_at', null);
+
+      const { data, error } = await archiveFilteredQuery
         .order('created_at', { ascending: false });
 
       if (!error && data) {
         setInvoices(data as Invoice[]);
+      } else {
+        setInvoices([]);
       }
 
       setLoading(false);
     }
 
     fetchInvoices();
-  }, [router]);
+  }, [router, showArchivedInvoices]);
 
   useEffect(() => {
     async function fetchBilling() {
@@ -148,12 +160,56 @@ export default function DashboardPage() {
     window.location.href = result.url;
   }
 
+  async function updateInvoiceArchive(invoice: Invoice, archived: boolean) {
+    const action = archived ? 'archive' : 'restore';
+
+    if (!window.confirm(`Are you sure you want to ${action} ${invoice.invoice_number}?`)) {
+      return;
+    }
+
+    setArchivingInvoiceId(invoice.id);
+    const response = await fetch(`/api/invoices/${invoice.id}/archive`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ archived }),
+    });
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      setNotice({
+        tone: 'warning',
+        message: result?.error || `Could not ${action} invoice.`,
+      });
+      setArchivingInvoiceId(null);
+      return;
+    }
+
+    setInvoices((current) => current.filter((item) => item.id !== invoice.id));
+    setNotice({
+      tone: 'success',
+      message: archived ? 'Invoice archived.' : 'Invoice restored.',
+    });
+    setArchivingInvoiceId(null);
+  }
+
   return (
     <AppPageShell
       title="Dashboard"
       subtitle="Track invoices, clients, and billing from one workspace."
       actions={
         <>
+          <button
+            type="button"
+            onClick={() => setShowArchivedInvoices((current) => !current)}
+            className="app-btn app-btn-secondary"
+          >
+            {showArchivedInvoices ? (
+              <RotateCcw aria-hidden="true" size={16} />
+            ) : (
+              <Archive aria-hidden="true" size={16} />
+            )}
+            {showArchivedInvoices ? 'Active Invoices' : 'Archived Invoices'}
+          </button>
           <Link href="/" className="app-btn app-btn-ghost">
             Home
           </Link>
@@ -225,30 +281,36 @@ export default function DashboardPage() {
         ) : invoices.length === 0 ? (
           <section className="app-card app-empty">
             <div className="app-empty-icon" aria-hidden="true">IH</div>
-            <h2>No invoices yet</h2>
+            <h2>{showArchivedInvoices ? 'No archived invoices' : 'No invoices yet'}</h2>
             <p className="app-muted">
-              Create your first invoice to get started.
+              {showArchivedInvoices
+                ? 'Archived invoices will appear here when you move them out of the active dashboard.'
+                : 'Create your first invoice to get started.'}
             </p>
-            <div className="app-check-grid">
-              {[
-                'Add or select a client',
-                'Save an invoice record',
-                'Download the saved PDF',
-                'Update payment status',
-              ].map((step) => (
-                <span key={step}>{step}</span>
-              ))}
-            </div>
-            <Link href="/invoice/new" className="app-btn app-btn-primary">
-              Create Invoice
-            </Link>
+            {!showArchivedInvoices && (
+              <>
+                <div className="app-check-grid">
+                  {[
+                    'Add or select a client',
+                    'Save an invoice record',
+                    'Download the saved PDF',
+                    'Update payment status',
+                  ].map((step) => (
+                    <span key={step}>{step}</span>
+                  ))}
+                </div>
+                <Link href="/invoice/new" className="app-btn app-btn-primary">
+                  Create Invoice
+                </Link>
+              </>
+            )}
           </section>
         ) : (
           <div className="app-table-wrap">
             <table className="app-table">
               <thead>
                 <tr>
-                  {['Invoice', 'Client', 'Date', 'Due Date', 'Amount', 'Status'].map((h) => (
+                  {['Invoice', 'Client', 'Date', 'Due Date', 'Amount', 'Status', 'Actions'].map((h) => (
                     <th
                       key={h}
                       scope="col"
@@ -290,6 +352,25 @@ export default function DashboardPage() {
                         >
                           {status.label}
                         </span>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => updateInvoiceArchive(invoice, !showArchivedInvoices)}
+                          disabled={archivingInvoiceId === invoice.id}
+                          className="app-btn app-btn-secondary"
+                        >
+                          {showArchivedInvoices ? (
+                            <RotateCcw aria-hidden="true" size={16} />
+                          ) : (
+                            <Archive aria-hidden="true" size={16} />
+                          )}
+                          {archivingInvoiceId === invoice.id
+                            ? 'Saving...'
+                            : showArchivedInvoices
+                              ? 'Restore'
+                              : 'Archive'}
+                        </button>
                       </td>
                     </tr>
                   );

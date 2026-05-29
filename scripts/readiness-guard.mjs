@@ -6,6 +6,8 @@ export const requiredFiles = [
   '.env.example',
   '.github/workflows/ci.yml',
   'app/api/invoices/route.ts',
+  'app/api/invoices/[id]/archive/route.ts',
+  'app/api/clients/[id]/archive/route.ts',
   'app/api/billing/checkout/route.ts',
   'app/api/billing/portal/route.ts',
   'app/api/billing/status/route.ts',
@@ -24,6 +26,7 @@ export const requiredFiles = [
   'proxy.ts',
   'supabase/migrations/20260523095504_add_billing_subscriptions.sql',
   'supabase/migrations/20260529090606_atomic_invoice_create.sql',
+  'supabase/migrations/20260529175218_add_archive_fields.sql',
 ];
 
 export const runtimeFilesToScan = [

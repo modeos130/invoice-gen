@@ -38,6 +38,18 @@ const checks = [
     expected: [403],
     requestHeaders: { Origin: 'https://invalid.example' },
   },
+  {
+    method: 'POST',
+    path: '/api/invoices/123e4567-e89b-12d3-a456-426614174000/archive',
+    expected: [403],
+    requestHeaders: { Origin: 'https://invalid.example' },
+  },
+  {
+    method: 'POST',
+    path: '/api/clients/123e4567-e89b-12d3-a456-426614174000/archive',
+    expected: [403],
+    requestHeaders: { Origin: 'https://invalid.example' },
+  },
 ];
 
 let failures = 0;

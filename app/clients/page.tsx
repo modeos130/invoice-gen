@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Archive, RotateCcw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { AppPageShell } from '@/components/AppPageShell';
 import type { Client } from '@/types/invoice';
@@ -14,9 +15,12 @@ export default function ClientsPage() {
   const router = useRouter();
   const [clients, setClients] = useState<ClientWithCount[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showArchivedClients, setShowArchivedClients] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [archivingClientId, setArchivingClientId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
 
   // Form state
   const [name, setName] = useState('');
@@ -25,6 +29,7 @@ export default function ClientsPage() {
   const [address, setAddress] = useState('');
 
   async function fetchClients() {
+    setLoading(true);
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -35,10 +40,16 @@ export default function ClientsPage() {
     }
 
     // Fetch clients
-    const { data: clientData } = await supabase
+    const query = supabase
       .from('clients')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', user.id);
+
+    const archiveFilteredQuery = showArchivedClients
+      ? query.not('archived_at', 'is', null)
+      : query.is('archived_at', null);
+
+    const { data: clientData } = await archiveFilteredQuery
       .order('name', { ascending: true });
 
     if (!clientData) {
@@ -73,7 +84,7 @@ export default function ClientsPage() {
   useEffect(() => {
     fetchClients();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [showArchivedClients]);
 
   function resetForm() {
     setName('');
@@ -118,10 +129,40 @@ export default function ClientsPage() {
     }
 
     resetForm();
+    setNotice('Client added.');
     setShowForm(false);
     setSaving(false);
     setLoading(true);
     fetchClients();
+  }
+
+  async function updateClientArchive(client: ClientWithCount, archived: boolean) {
+    const action = archived ? 'archive' : 'restore';
+
+    if (!window.confirm(`Are you sure you want to ${action} ${client.name}?`)) {
+      return;
+    }
+
+    setNotice('');
+    setError('');
+    setArchivingClientId(client.id);
+
+    const response = await fetch(`/api/clients/${client.id}/archive`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ archived }),
+    });
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      setError(result?.error || `Could not ${action} client.`);
+      setArchivingClientId(null);
+      return;
+    }
+
+    setClients((current) => current.filter((item) => item.id !== client.id));
+    setNotice(archived ? 'Client archived.' : 'Client restored.');
+    setArchivingClientId(null);
   }
 
   return (
@@ -130,18 +171,44 @@ export default function ClientsPage() {
       subtitle="Keep client details ready before creating invoices."
       backHref="/dashboard"
       actions={
-        <button
-          onClick={() => {
-            resetForm();
-            setShowForm(!showForm);
-          }}
-          className={`app-btn ${showForm ? 'app-btn-secondary' : 'app-btn-primary'}`}
-        >
-          {showForm ? 'Cancel' : 'Add Client'}
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={() => setShowArchivedClients((current) => !current)}
+            className="app-btn app-btn-secondary"
+          >
+            {showArchivedClients ? (
+              <RotateCcw aria-hidden="true" size={16} />
+            ) : (
+              <Archive aria-hidden="true" size={16} />
+            )}
+            {showArchivedClients ? 'Active Clients' : 'Archived Clients'}
+          </button>
+          <button
+            onClick={() => {
+              resetForm();
+              setShowForm(!showForm);
+            }}
+            className={`app-btn ${showForm ? 'app-btn-secondary' : 'app-btn-primary'}`}
+          >
+            {showForm ? 'Cancel' : 'Add Client'}
+          </button>
+        </>
       }
       width="lg"
     >
+        {notice && (
+          <div className="app-alert app-alert-success mb-6" role="status">
+            {notice}
+          </div>
+        )}
+
+        {error && !showForm && (
+          <div className="app-alert app-alert-error mb-6" role="alert">
+            {error}
+          </div>
+        )}
+
         {showForm && (
           <section className="app-card mb-8">
             <h2 className="mb-4">New Client</h2>
@@ -247,26 +314,30 @@ export default function ClientsPage() {
         ) : clients.length === 0 ? (
           <section className="app-card app-empty">
             <div className="app-empty-icon" aria-hidden="true">CL</div>
-            <h2>No clients yet</h2>
+            <h2>{showArchivedClients ? 'No archived clients' : 'No clients yet'}</h2>
             <p className="app-muted">
-              Add your first client to get started.
+              {showArchivedClients
+                ? 'Archived clients will appear here after they are moved out of active use.'
+                : 'Add your first client to get started.'}
             </p>
-            <button
-              onClick={() => {
-                resetForm();
-                setShowForm(true);
-              }}
-              className="app-btn app-btn-primary"
-            >
-              Add Client
-            </button>
+            {!showArchivedClients && (
+              <button
+                onClick={() => {
+                  resetForm();
+                  setShowForm(true);
+                }}
+                className="app-btn app-btn-primary"
+              >
+                Add Client
+              </button>
+            )}
           </section>
         ) : (
           <div className="app-table-wrap">
             <table className="app-table">
               <thead>
                 <tr>
-                  {['Name', 'Email', 'Phone', 'Invoices'].map((h) => (
+                  {['Name', 'Email', 'Phone', 'Invoices', 'Actions'].map((h) => (
                     <th
                       key={h}
                       scope="col"
@@ -290,6 +361,25 @@ export default function ClientsPage() {
                     </td>
                     <td>
                       {client.invoice_count}
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        onClick={() => updateClientArchive(client, !showArchivedClients)}
+                        disabled={archivingClientId === client.id}
+                        className="app-btn app-btn-secondary"
+                      >
+                        {showArchivedClients ? (
+                          <RotateCcw aria-hidden="true" size={16} />
+                        ) : (
+                          <Archive aria-hidden="true" size={16} />
+                        )}
+                        {archivingClientId === client.id
+                          ? 'Saving...'
+                          : showArchivedClients
+                            ? 'Restore'
+                            : 'Archive'}
+                      </button>
                     </td>
                   </tr>
                 ))}

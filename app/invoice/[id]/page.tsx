@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { Archive, RotateCcw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, formatDate } from '@/lib/invoice-utils';
 import { AppPageShell } from '@/components/AppPageShell';
@@ -37,6 +38,8 @@ export default function InvoiceDetailPage({ params }: PageProps) {
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [updatingArchive, setUpdatingArchive] = useState(false);
+  const [archiveError, setArchiveError] = useState('');
 
   useEffect(() => {
     async function fetchInvoice() {
@@ -83,6 +86,34 @@ export default function InvoiceDetailPage({ params }: PageProps) {
     }
 
     setUpdatingStatus(false);
+  }
+
+  async function handleArchiveChange(archived: boolean) {
+    if (!invoice) return;
+    const action = archived ? 'archive' : 'restore';
+
+    if (!window.confirm(`Are you sure you want to ${action} ${invoice.invoice_number}?`)) {
+      return;
+    }
+
+    setArchiveError('');
+    setUpdatingArchive(true);
+
+    const response = await fetch(`/api/invoices/${invoice.id}/archive`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ archived }),
+    });
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      setArchiveError(result?.error || `Could not ${action} invoice.`);
+      setUpdatingArchive(false);
+      return;
+    }
+
+    setInvoice({ ...invoice, archived_at: result.archived_at ?? null });
+    setUpdatingArchive(false);
   }
 
   if (loading) {
@@ -132,9 +163,34 @@ export default function InvoiceDetailPage({ params }: PageProps) {
             </div>
 
             <InvoicePdfDownloadButton invoice={invoice} />
+
+            <button
+              type="button"
+              onClick={() => handleArchiveChange(!invoice.archived_at)}
+              disabled={updatingArchive}
+              className="app-btn app-btn-secondary"
+            >
+              {invoice.archived_at ? (
+                <RotateCcw aria-hidden="true" size={16} />
+              ) : (
+                <Archive aria-hidden="true" size={16} />
+              )}
+              {updatingArchive ? 'Saving...' : invoice.archived_at ? 'Restore' : 'Archive'}
+            </button>
         </>
       }
     >
+        {archiveError && (
+          <div className="app-alert app-alert-error mb-6" role="alert">
+            {archiveError}
+          </div>
+        )}
+
+        {invoice.archived_at && (
+          <div className="app-alert app-alert-warning mb-6" role="status">
+            This invoice is archived and hidden from the active dashboard.
+          </div>
+        )}
 
         <div className="invoice-paper">
           <div className="mb-10 flex items-start justify-between">

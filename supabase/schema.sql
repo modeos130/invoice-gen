@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS clients (
   email TEXT DEFAULT '',
   address TEXT DEFAULT '',
   phone TEXT DEFAULT '',
+  archived_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -26,6 +27,7 @@ CREATE TABLE IF NOT EXISTS invoices (
   notes TEXT DEFAULT '',
   invoice_date DATE DEFAULT CURRENT_DATE,
   due_date DATE DEFAULT (CURRENT_DATE + INTERVAL '30 days'),
+  archived_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE (user_id, invoice_number)
@@ -56,9 +58,11 @@ CREATE TABLE IF NOT EXISTS invoice_counters (
 );
 
 CREATE INDEX IF NOT EXISTS clients_user_id_idx ON clients(user_id);
+CREATE INDEX IF NOT EXISTS clients_user_archived_name_idx ON clients(user_id, archived_at, name);
 CREATE INDEX IF NOT EXISTS invoices_user_id_idx ON invoices(user_id);
 CREATE INDEX IF NOT EXISTS invoices_client_id_idx ON invoices(client_id);
 CREATE INDEX IF NOT EXISTS invoices_user_created_at_idx ON invoices(user_id, created_at);
+CREATE INDEX IF NOT EXISTS invoices_user_archived_created_idx ON invoices(user_id, archived_at, created_at DESC);
 CREATE INDEX IF NOT EXISTS billing_profiles_stripe_customer_id_idx ON billing_profiles(stripe_customer_id);
 CREATE INDEX IF NOT EXISTS billing_profiles_stripe_subscription_id_idx ON billing_profiles(stripe_subscription_id);
 
@@ -166,7 +170,8 @@ BEGIN
     INTO v_client_name, v_client_email, v_client_address
     FROM clients
     WHERE clients.id = v_client_id
-      AND clients.user_id = v_user_id;
+      AND clients.user_id = v_user_id
+      AND clients.archived_at IS NULL;
 
     IF NOT FOUND THEN
       RAISE EXCEPTION 'Selected client was not found.'

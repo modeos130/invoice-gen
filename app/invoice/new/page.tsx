@@ -65,6 +65,7 @@ export default function NewInvoicePage() {
         .from('clients')
         .select('*')
         .eq('user_id', user.id)
+        .is('archived_at', null)
         .order('name', { ascending: true });
 
       if (clientData) {

@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
       .select('id,name,email,address')
       .eq('id', clientId)
       .eq('user_id', user.id)
+      .is('archived_at', null)
       .single();
 
     if (clientError || !client) {

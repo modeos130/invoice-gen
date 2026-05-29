@@ -10,7 +10,9 @@ Vitest unit testing is installed for pure helper and selected API wrapper covera
 |---|---|---|
 | Auth | Signup, email verification, login, logout, password reset | Test user can complete each flow, Supabase email links pass through `/auth/callback`, and protected routes redirect correctly. |
 | Clients | Add client and list clients | Client appears only for the signed-in user. |
+| Clients | Archive and restore client | Archived clients leave the active client list, appear in the archived view, restore to the active list, and are not offered in new invoice client selection while archived. |
 | Invoices | Create invoice with existing/new client | Server saves invoice, dashboard shows it, detail route opens. |
+| Invoices | Archive and restore invoice | Archived invoices leave the active dashboard, appear in the archived view, restore to the active dashboard, and still count toward invoice numbering/free usage. |
 | PDF | Download saved invoice PDF | Download is only available after saved invoice route; unsaved invoice cannot bypass quota. |
 | Free limit | Create 3 invoices as free user, attempt 4th | Fourth create returns upgrade path and no invoice is inserted. |
 | Atomic invoice create | Enable `INVOICE_CREATE_RPC_ENABLED=true` in a controlled environment and run concurrent invoice creates | Concurrent creates cannot exceed quota or duplicate invoice numbers. |
@@ -31,6 +33,7 @@ Vitest unit testing is installed for pure helper and selected API wrapper covera
 | Cancellation/downgrade | Subscription canceled | Webhook removes Pro entitlement. |
 | Idempotency | Duplicate Stripe event | Event claim insert prevents double entitlement sync; duplicate replay returns `{ received: true, duplicate: true }`. |
 | RLS | Two users with clients/invoices | Neither user can read/update the other user's data. |
+| Archive RLS | Two users archive/restore clients/invoices | User A cannot archive or restore User B's client or invoice by guessing IDs. |
 | Error handling | Bad auth, bad payload, missing env, Stripe failure | User gets safe message; logs contain useful server-side detail. |
 | Accessibility | Keyboard-only auth/dashboard/invoice flows | Focus visible, no keyboard traps, form errors announced. |
 | CSP browser QA | Signup, dashboard, PDF, checkout, billing portal | No CSP violations block required app behavior in browser devtools. |
@@ -69,3 +72,5 @@ npm run test:a11y
 ## Database Migration QA
 
 The atomic invoice migrations are committed as `supabase/migrations/20260529090606_atomic_invoice_create.sql` and `supabase/migrations/20260529121916_grant_create_invoice_atomic.sql`, with the resulting schema mirrored in `supabase/schema.sql`. They are applied to the linked hosted Supabase project. Until `INVOICE_CREATE_RPC_ENABLED=true` is enabled and authenticated QA passes, `/api/invoices` continues to use the existing non-atomic fallback path.
+
+Archive/restore support is committed as `supabase/migrations/20260529175218_add_archive_fields.sql`. Apply and verify this migration before deploying the matching app source because active dashboard/client queries expect nullable `archived_at` columns on `clients` and `invoices`.

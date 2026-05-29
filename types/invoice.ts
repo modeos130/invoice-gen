@@ -13,7 +13,9 @@ export interface Client {
   email: string;
   address: string;
   phone: string;
+  archived_at: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue';
@@ -35,5 +37,7 @@ export interface Invoice {
   notes: string;
   invoice_date: string;
   due_date: string;
+  archived_at: string | null;
   created_at: string;
+  updated_at: string;
 }

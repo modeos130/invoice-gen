@@ -27,6 +27,7 @@
 
 - [ ] Confirm CI, preview smoke, and authenticated manual QA all pass on the release commit.
 - [ ] Apply and verify Supabase production migrations.
+- [ ] Apply and verify archive fields migration `supabase/migrations/20260529175218_add_archive_fields.sql` before deploying matching archive source.
 - [ ] Enable `INVOICE_CREATE_RPC_ENABLED=true` only after authenticated invoice QA verifies the RPC path in that environment.
 - [ ] Configure production `NEXT_PUBLIC_APP_URL=https://www.ihateinvoices.com`.
 - [ ] Configure live Stripe `STRIPE_SECRET_KEY`.
@@ -37,6 +38,7 @@
 - [ ] Run a controlled live subscription test.
 - [ ] Verify webhook grants Pro entitlement.
 - [ ] Verify cancellation removes Pro entitlement.
+- [ ] Verify invoice archive, invoice restore, client archive, and client restore on production.
 - [ ] Decide sales tax/VAT handling with accountant guidance.
 - [ ] Confirm production CSP and production abuse-monitoring coverage.
 - [ ] Add monitoring/error tracking.
@@ -47,7 +49,7 @@
 - [ ] Monitor signups, first invoice completion, free-limit hits, checkout starts, checkout completions, cancellations, and support requests.
 - [ ] Review Stripe failed payments and webhook delivery daily for the first week.
 - [ ] Review Supabase auth/database logs daily for the first week.
-- [ ] Add client edit/delete, invoice edit/delete, search/filter/sort, and mobile table improvements.
+- [ ] Add client edit, invoice edit/duplicate, search/filter/sort, and mobile table improvements.
 
 ## Emergency Rollback
 

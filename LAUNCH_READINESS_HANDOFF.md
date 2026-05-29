@@ -18,13 +18,13 @@ This section supersedes older preview-only revenue notes below.
 - Production error-log check after live QA returned no Vercel error logs.
 - Public route check passed for `/`, `/login`, `/signup`, `/privacy`, `/terms`, `/refunds`, `/robots.txt`, and `/sitemap.xml`.
 - Current company/contact/location copy was checked against `https://boomansystems.com/contact/` on 2026-05-29 and matches `Booman Systems LLC`, `admin@modeos.app`, and `Arizona LLC operating from Maryland`.
-- Remaining non-code launch decisions: final legal review, whether to delete/archive owner test data, whether to add user-facing delete/archive controls for invoices and clients, and key rotation/removal for any old unused Vercel/Stripe values after confirming they are not used elsewhere.
+- Remaining launch work: final legal review, deploy and live-QA archive/restore for invoices and clients, any desired test-data cleanup, and key rotation/removal for old unused Vercel/Stripe values after confirming they are not used elsewhere.
 
 ## Verdict
 
 Production revenue flow has passed an owner live checkout smoke test, but the app still needs final product cleanup before a broad public launch.
 
-The app is live, reachable, and passes the local and CI validation gates recorded below. The revenue plumbing has been implemented in code and verified in production with a real owner checkout: Stripe Checkout, Stripe Customer Portal, webhook-driven billing profiles, and server-side free-tier invoice enforcement. It should still be treated as a controlled beta until final legal review, test-data cleanup decisions, and delete/archive expectations are settled.
+The app is live, reachable, and passes the local and CI validation gates recorded below. The revenue plumbing has been implemented in code and verified in production with a real owner checkout: Stripe Checkout, Stripe Customer Portal, webhook-driven billing profiles, and server-side free-tier invoice enforcement. It should still be treated as a controlled beta until final legal review, archive/restore live QA, and test-data cleanup decisions are settled.
 
 ## Product Surface
 
@@ -292,10 +292,12 @@ The app is live, reachable, and passes the local and CI validation gates recorde
    - Site company/contact copy matches the current public Booman Systems LLC source site.
    - A lawyer or owner-approved policy review should confirm subscription, cancellation, refund, privacy, and business-contact language before wide launch.
 
-2. Delete/archive behavior still needs a product decision.
+2. Archive/restore behavior is implemented in source and awaiting deploy/live QA.
    - Current production testing created real clients/invoices.
-   - Code audit on 2026-05-29 confirmed there are no invoice/client delete, archive, restore, or purge controls.
-   - Adding them should be treated as a product and data-integrity change, not a blind cleanup.
+   - Code audit on 2026-05-29 confirmed there were no invoice/client delete, archive, restore, or purge controls.
+   - Archive/restore controls have now been implemented in source as the safer launch option.
+   - The hosted Supabase database received `supabase/migrations/20260529175218_add_archive_fields.sql` on 2026-05-29 and read-only REST checks confirmed `clients.archived_at` and `invoices.archived_at`.
+   - Hard delete remains intentionally excluded from the normal user UI.
 
 3. Old key cleanup still needs confirmation.
    - Live Stripe production values are configured and working.
@@ -321,12 +323,13 @@ The app is live, reachable, and passes the local and CI validation gates recorde
 
 ## Recommended Public Launch Sequence
 
-1. Finish delete/archive audit and decide whether test production records should remain, be manually removed, or be handled through new app controls.
-2. Run one password-reset QA pass with a real account.
-3. Perform owner/legal review of `/terms`, `/privacy`, and `/refunds`.
-4. Confirm no unused old Stripe or Vercel keys remain after checking whether any other project depends on them.
-5. Run a final post-deploy smoke: root, signup, login, dashboard, authenticated invoice creation, PDF download, Stripe checkout, webhook fulfillment, customer portal, password reset, and legal/footer links.
-6. Add uptime/error monitoring if the app will be publicly promoted beyond controlled beta traffic.
+1. Deploy the matching archive/restore source now that the migration is verified.
+2. Run archive/restore QA for active and archived invoices and clients.
+3. Run one password-reset QA pass with a real account.
+4. Perform owner/legal review of `/terms`, `/privacy`, and `/refunds`.
+5. Confirm no unused old Stripe or Vercel keys remain after checking whether any other project depends on them.
+6. Run a final post-deploy smoke: root, signup, login, dashboard, authenticated invoice creation, invoice/client archive and restore, PDF download, Stripe checkout, webhook fulfillment, customer portal, password reset, and legal/footer links.
+7. Add uptime/error monitoring if the app will be publicly promoted beyond controlled beta traffic.
 
 ## Current Readiness Score
 

@@ -58,11 +58,13 @@ GitHub Actions runs `npm ci`, `npm run verify`, `npm run readiness`, `npm run te
 
 ## Production Notes
 
-Production serves the current public, legal, auth, billing, and webhook route surface on `https://www.ihateinvoices.com`. Live Stripe Product/Price/webhook/portal variables are configured in Vercel Production, and the owner completed a live Pro checkout, billing portal open, invoice creation, status update, and PDF download test. Remaining launch checks are final owner/legal review, any desired test-data cleanup, delete/archive product decisions, and ongoing production log monitoring.
+Production serves the current public, legal, auth, billing, and webhook route surface on `https://www.ihateinvoices.com`. Live Stripe Product/Price/webhook/portal variables are configured in Vercel Production, and the owner completed a live Pro checkout, billing portal open, invoice creation, status update, and PDF download test. Remaining launch checks are final owner/legal review, archive/restore live QA, any desired test-data cleanup, and ongoing production log monitoring.
 
 Signup and verification emails must redirect through `/auth/callback?next=/dashboard`, not directly to `/dashboard`. The callback exchanges the Supabase code for SSR cookies before sending the user into the protected workspace, which prevents confirmation links from landing on stale or unauthenticated protected pages.
 
 Do not treat a migration file in this repo as proof that the hosted Supabase database has been changed.
+
+Archive/restore support requires `supabase/migrations/20260529175218_add_archive_fields.sql` before deploying the matching app code. The linked hosted project was migrated and read-verified on 2026-05-29. The app expects nullable `archived_at` fields on `clients` and `invoices`.
 
 `INVOICE_CREATE_RPC_ENABLED` must stay `false` until authenticated invoice QA verifies the target environment. The Supabase migrations through `20260529121916_grant_create_invoice_atomic.sql` are applied to the linked hosted project, and `/api/invoices` can use the `create_invoice_atomic` RPC for quota enforcement and invoice numbering once the flag is enabled.
 
