@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AuthShell } from '@/components/AuthShell';
 import { getAuthErrorMessage, withAuthTimeout } from '@/lib/auth-timeout';
@@ -12,16 +12,30 @@ export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const resetError = params.get('reset_error');
+
+    if (resetError === 'missing-code') {
+      setError('The reset link was missing its sign-in code. Request a new reset link.');
+    }
+
+    if (resetError === 'link-failed') {
+      setError('The reset link could not be verified. Request a new reset link.');
+    }
+  }, []);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const redirectTo = `${window.location.origin}/reset-password`;
+      const redirectTo = new URL('/auth/callback', window.location.origin);
+      redirectTo.searchParams.set('next', '/reset-password');
       const { error: resetError } = await withAuthTimeout(
         supabase.auth.resetPasswordForEmail(email, {
-          redirectTo,
+          redirectTo: redirectTo.toString(),
         }),
         'Reset request timed out. Check your connection and try again.',
       );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AuthShell } from '@/components/AuthShell';
 import { getAuthErrorMessage, withAuthTimeout } from '@/lib/auth-timeout';
@@ -11,11 +11,50 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [canResetPassword, setCanResetPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function checkRecoverySession() {
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await withAuthTimeout(
+          supabase.auth.getUser(),
+          'Reset session check timed out. Request a new reset link and try again.',
+        );
+
+        if (userError || !user) {
+          setError('Open the reset link from your email before choosing a new password.');
+          setCanResetPassword(false);
+          return;
+        }
+
+        setCanResetPassword(true);
+      } catch (sessionError) {
+        setError(getAuthErrorMessage(
+          sessionError,
+          'Reset session could not be verified. Request a new reset link and try again.',
+        ));
+        setCanResetPassword(false);
+      } finally {
+        setCheckingSession(false);
+      }
+    }
+
+    checkRecoverySession();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+
+    if (!canResetPassword) {
+      setError('Open the reset link from your email before choosing a new password.');
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
@@ -70,6 +109,21 @@ export default function ResetPasswordPage() {
             </div>
             <Link href="/login" className="auth-link">
               Back to Sign In
+            </Link>
+          </div>
+        ) : checkingSession ? (
+          <div className="auth-state">
+            <div className="auth-alert auth-alert-success" role="status">
+              Checking reset link...
+            </div>
+          </div>
+        ) : !canResetPassword ? (
+          <div className="auth-state">
+            <div className="auth-alert auth-alert-error" role="alert">
+              {error}
+            </div>
+            <Link href="/forgot-password" className="auth-link">
+              Request New Reset Link
             </Link>
           </div>
         ) : (
