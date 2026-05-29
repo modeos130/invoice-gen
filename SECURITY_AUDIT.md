@@ -16,8 +16,8 @@ Security is acceptable for controlled internal testing after the current code is
 
 | Finding | Evidence | Risk | Required fix |
 |---|---|---|---|
-| Free quota enforcement is non-atomic | `app/api/invoices/route.ts` counts invoices, then inserts later | Concurrent requests can exceed free quota | Move create/quota/invoice-number logic into a Postgres transaction/RPC. |
-| Invoice numbering is race-prone | `app/api/invoices/route.ts` generates invoice number from count | Duplicate number under concurrency | Use per-user sequence/counter in DB transaction. |
+| Free quota enforcement is non-atomic by default | `app/api/invoices/route.ts` still falls back to count-then-insert unless `INVOICE_CREATE_RPC_ENABLED=true`; `supabase/migrations/20260529090606_atomic_invoice_create.sql` prepares the RPC | Concurrent requests can exceed free quota until the migration is applied and flag enabled | Apply the migration in preview, verify concurrency, then enable the flag. |
+| Invoice numbering is race-prone by default | Existing fallback generates invoice number from count; prepared `invoice_counters` table/RPC is not live-enabled yet | Duplicate number under concurrency until RPC path is live | Apply and verify the per-user counter/RPC migration. |
 | No automated RLS/security tests | No test framework or RLS test suite | Cross-user regressions may ship unnoticed | Add RLS tests for clients, invoices, billing profiles. |
 
 ## Medium Findings
@@ -44,6 +44,7 @@ Security is acceptable for controlled internal testing after the current code is
 - Service-role key usage is server-only in inspected code.
 - Browser Supabase client now uses SSR-compatible auth cookies.
 - Login redirect stays on same-site relative paths.
+- A feature-flagged atomic invoice RPC path is prepared locally and covered by route-wrapper unit tests.
 
 ## Commands
 

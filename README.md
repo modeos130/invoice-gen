@@ -61,6 +61,8 @@ Production is not ready for paid launch until the current billing/legal API surf
 
 Do not treat a migration file in this repo as proof that the hosted Supabase database has been changed.
 
+`INVOICE_CREATE_RPC_ENABLED` must stay `false` until `supabase/migrations/20260529090606_atomic_invoice_create.sql` has been applied and verified in the target Supabase environment. When enabled, `/api/invoices` uses the `create_invoice_atomic` RPC for quota enforcement and invoice numbering.
+
 ## Troubleshooting
 
 - Login loops usually mean Supabase browser auth is not writing SSR-compatible cookies or the Supabase redirect URL/domain allowlist is wrong.

@@ -7,7 +7,7 @@
 | P0 | Git/release | Commit/push current legal/API/auth/billing files | Low | High | High if skipped | Reproducible deploy from repo. |
 | P0 | CI | Confirm GitHub Actions CI passes after push | Low | High | Medium | `npm ci`, `npm run verify`, and `npm run smoke` pass on the release commit. |
 | P0 | Production/preview | Deploy current source to preview and smoke authenticated flow | Medium | High | Medium | Signup through saved invoice works on preview. |
-| P0 | `/api/invoices` + DB | Make free limit and invoice numbering atomic | High | High | High | Concurrent creates cannot exceed quota or duplicate invoice numbers. |
+| P0 | `/api/invoices` + DB | Apply and verify prepared atomic invoice RPC migration | Medium | High | High | `20260529090606_atomic_invoice_create.sql` is applied to preview, `INVOICE_CREATE_RPC_ENABLED=true` is enabled, and concurrent creates cannot exceed quota or duplicate invoice numbers. |
 | P0 | Stripe | Complete preview Stripe checkout/webhook/portal QA | Medium | High | High | Test subscription grants/removes Pro through webhook. |
 | P1 | Legal pages | Deploy `/terms`, `/privacy`, `/refunds` and add missing privacy/cookie/minors language | Medium | High | Medium | Legal pages reachable and founder-approved. |
 | P1 | Security | Add tested CSP and broader abuse monitoring | Medium | High | Medium | Production has a tested CSP and abuse signals beyond local request throttles. |

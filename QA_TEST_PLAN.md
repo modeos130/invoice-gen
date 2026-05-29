@@ -2,7 +2,7 @@
 
 ## Current Testing State
 
-Vitest unit testing is installed for pure helper and selected API wrapper coverage. Current automated checks include lint, TypeScript, production build, static readiness guard, unit tests, and route smoke checks. Unit tests cover billing helpers, billing route response/session builders, server environment helpers, invoice validation, request-security helpers, Stripe webhook processing helpers, signed Stripe webhook route fixtures, billing API route wrappers, invoice API route wrappers, and the static readiness guard. Authenticated E2E, accessibility, visual regression, preview Stripe replay, and Supabase RLS tests are still missing.
+Vitest unit testing is installed for pure helper and selected API wrapper coverage. Current automated checks include lint, TypeScript, production build, static readiness guard, unit tests, and route smoke checks. Unit tests cover billing helpers, billing route response/session builders, server environment helpers, invoice validation, request-security helpers, Stripe webhook processing helpers, signed Stripe webhook route fixtures, billing API route wrappers, invoice API route wrappers, the feature-flagged atomic invoice RPC path, and the static readiness guard. Authenticated E2E, accessibility, visual regression, preview Stripe replay, Supabase RLS tests, and live verification of the atomic invoice migration are still missing.
 
 ## Minimum Tests Required Before Beta
 
@@ -13,6 +13,7 @@ Vitest unit testing is installed for pure helper and selected API wrapper covera
 | Invoices | Create invoice with existing/new client | Server saves invoice, dashboard shows it, detail route opens. |
 | PDF | Download saved invoice PDF | Download is only available after saved invoice route; unsaved invoice cannot bypass quota. |
 | Free limit | Create 3 invoices as free user, attempt 4th | Fourth create returns upgrade path and no invoice is inserted. |
+| Atomic invoice create | Apply `20260529090606_atomic_invoice_create.sql`, enable `INVOICE_CREATE_RPC_ENABLED=true`, run concurrent invoice creates | Concurrent creates cannot exceed quota or duplicate invoice numbers. |
 | Billing status | Dashboard status for free/pro | Correct usage/plan appears from `/api/billing/status`. |
 | Public routes | `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`, `/privacy`, `/refunds` | All return `200` on preview. |
 | Legal links | Footer/auth links | Links resolve and display Booman Systems LLC contact info configured in `lib/company.ts`. |
@@ -60,3 +61,7 @@ npm run test:a11y
 ## Static Readiness Guard
 
 `npm run readiness` checks that release-critical files exist, runtime copy does not reintroduce blocked stale language, and the new invoice page cannot download an unsaved PDF. It is not a substitute for authenticated E2E or Supabase RLS tests.
+
+## Database Migration QA
+
+The atomic invoice migration is committed as `supabase/migrations/20260529090606_atomic_invoice_create.sql` and mirrored in `supabase/schema.sql`. It must be applied to a preview Supabase database and verified before setting `INVOICE_CREATE_RPC_ENABLED=true` in any deployed environment. Until that flag is enabled, `/api/invoices` continues to use the existing non-atomic fallback path.

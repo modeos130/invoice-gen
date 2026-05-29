@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FREE_INVOICE_LIMIT, type BillingProfile } from '../lib/billing';
 
 type User = {
@@ -29,6 +29,9 @@ type InvoicesRouteState = {
   newClientError: Error | null;
   insertedInvoice: { id: string; invoice_number: string } | null;
   insertedInvoiceError: Error | null;
+  rpcInvoice: { id: string; invoice_number: string } | null;
+  rpcError: Error | null;
+  rpcCalls: Array<{ functionName: string; params: Record<string, unknown> }>;
   clientInserts: Array<Record<string, unknown>>;
   invoiceInserts: Array<Record<string, unknown>>;
 };
@@ -67,6 +70,9 @@ function resetState(overrides: Partial<InvoicesRouteState> = {}) {
     newClientError: null,
     insertedInvoice: { id: 'invoice_created', invoice_number: 'INV-2026-005' },
     insertedInvoiceError: null,
+    rpcInvoice: { id: 'invoice_rpc', invoice_number: 'INV-2026-011' },
+    rpcError: null,
+    rpcCalls: [],
     clientInserts: [],
     invoiceInserts: [],
     ...overrides,
@@ -176,6 +182,17 @@ function makeSupabaseClient() {
         insert: (payload: Record<string, unknown>) => insertQuery(table, payload),
       };
     },
+    rpc(functionName: string, params: Record<string, unknown>) {
+      state.rpcCalls.push({ functionName, params });
+      return {
+        async single() {
+          return {
+            data: state.rpcInvoice,
+            error: state.rpcError,
+          };
+        },
+      };
+    },
   };
 }
 
@@ -199,6 +216,11 @@ beforeEach(() => {
   vi.doMock('@/lib/supabase-server', () => ({
     createSupabaseServerClient: async () => makeSupabaseClient(),
   }));
+});
+
+afterEach(() => {
+  vi.doUnmock('@/lib/supabase-server');
+  vi.unstubAllEnvs();
 });
 
 describe('invoice API route', () => {
@@ -293,6 +315,55 @@ describe('invoice API route', () => {
       notes: 'Thank you.',
       invoice_date: '2026-05-29',
       due_date: '2026-06-28',
+    });
+  });
+
+  it('uses the atomic invoice RPC when the feature flag is enabled', async () => {
+    vi.stubEnv('INVOICE_CREATE_RPC_ENABLED', 'true');
+
+    const response = await postInvoice(validPayload());
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toEqual({
+      id: 'invoice_rpc',
+      invoice_number: 'INV-2026-011',
+    });
+    expect(state.rpcCalls).toEqual([
+      {
+        functionName: 'create_invoice_atomic',
+        params: expect.objectContaining({
+          p_client_id: null,
+          p_client_name: 'Acme Studio',
+          p_client_email: 'billing@example.com',
+          p_client_address: '123 Main St',
+          p_subtotal: 300,
+          p_tax_rate: 5,
+          p_tax_amount: 15,
+          p_total: 315,
+          p_notes: 'Thank you.',
+          p_invoice_date: '2026-05-29',
+          p_due_date: '2026-06-28',
+          p_free_invoice_limit: FREE_INVOICE_LIMIT,
+        }),
+      },
+    ]);
+    expect(state.clientInserts).toHaveLength(0);
+    expect(state.invoiceInserts).toHaveLength(0);
+  });
+
+  it('maps the atomic invoice RPC free-limit error to the existing 402 response', async () => {
+    vi.stubEnv('INVOICE_CREATE_RPC_ENABLED', 'true');
+    resetState({
+      rpcInvoice: null,
+      rpcError: new Error('FREE_LIMIT_REACHED'),
+    });
+
+    const response = await postInvoice(validPayload());
+
+    expect(response.status).toBe(402);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Free plan limit reached. Upgrade to Pro for unlimited invoices.',
+      code: 'FREE_LIMIT_REACHED',
     });
   });
 });

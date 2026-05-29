@@ -12,6 +12,7 @@
 - [ ] Run signup, email verification, login, logout, password reset.
 - [ ] Add a client.
 - [ ] Create saved invoices until the free limit is hit.
+- [ ] Apply `supabase/migrations/20260529090606_atomic_invoice_create.sql` to preview, enable `INVOICE_CREATE_RPC_ENABLED=true`, and verify concurrent invoice creates.
 - [ ] Confirm unsaved invoice PDF download is not available.
 - [ ] Download a saved invoice PDF.
 - [ ] Confirm dashboard billing status and upgrade button behavior.
@@ -21,6 +22,7 @@
 
 - [ ] Confirm CI, preview smoke, and authenticated manual QA all pass on the release commit.
 - [ ] Apply and verify Supabase production migrations.
+- [ ] Enable `INVOICE_CREATE_RPC_ENABLED=true` only after the atomic invoice migration is verified in that environment.
 - [ ] Configure production `NEXT_PUBLIC_APP_URL=https://www.ihateinvoices.com`.
 - [ ] Configure live Stripe `STRIPE_SECRET_KEY`.
 - [ ] Configure live Stripe recurring Pro Price and `STRIPE_PRO_PRICE_ID`.

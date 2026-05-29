@@ -40,6 +40,55 @@ export async function POST(request: NextRequest) {
   }
 
   const validatedPayload = validation.value;
+  const subtotal = validatedPayload.lineItems.reduce((sum, item) => sum + item.amount, 0);
+  const taxAmount = subtotal * (validatedPayload.taxRate / 100);
+  const total = subtotal + taxAmount;
+
+  if (process.env.INVOICE_CREATE_RPC_ENABLED === 'true') {
+    const { data: invoice, error: rpcError } = await supabase
+      .rpc('create_invoice_atomic', {
+        p_client_id: validatedPayload.clientId,
+        p_client_name: validatedPayload.clientName,
+        p_client_email: validatedPayload.clientEmail,
+        p_client_address: validatedPayload.clientAddress,
+        p_line_items: validatedPayload.lineItems,
+        p_subtotal: subtotal,
+        p_tax_rate: validatedPayload.taxRate,
+        p_tax_amount: taxAmount,
+        p_total: total,
+        p_notes: validatedPayload.notes,
+        p_invoice_date: validatedPayload.invoiceDate,
+        p_due_date: validatedPayload.dueDate,
+        p_free_invoice_limit: FREE_INVOICE_LIMIT,
+      })
+      .single();
+
+    if (rpcError || !invoice) {
+      const message = rpcError?.message ?? '';
+
+      if (message.includes('FREE_LIMIT_REACHED')) {
+        return NextResponse.json(
+          {
+            error: `Free plan limit reached. Upgrade to Pro for unlimited invoices.`,
+            code: 'FREE_LIMIT_REACHED',
+          },
+          { status: 402 }
+        );
+      }
+
+      if (message.includes('Selected client was not found.')) {
+        return NextResponse.json({ error: 'Selected client was not found.' }, { status: 400 });
+      }
+
+      if (message.includes('Client name is required.')) {
+        return NextResponse.json({ error: 'Client name is required.' }, { status: 400 });
+      }
+
+      return NextResponse.json({ error: 'Failed to save invoice.' }, { status: 500 });
+    }
+
+    return NextResponse.json(invoice, { status: 201 });
+  }
 
   const { data: profile, error: profileError } = await supabase
     .from('billing_profiles')
@@ -113,10 +162,6 @@ export async function POST(request: NextRequest) {
 
     clientId = newClient.id;
   }
-
-  const subtotal = validatedPayload.lineItems.reduce((sum, item) => sum + item.amount, 0);
-  const taxAmount = subtotal * (validatedPayload.taxRate / 100);
-  const total = subtotal + taxAmount;
 
   const { count: invoiceCount, error: invoiceCountError } = await supabase
     .from('invoices')
