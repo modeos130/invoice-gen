@@ -1,71 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { currentMonthStartIso, FREE_INVOICE_LIMIT, isProEntitled } from '@/lib/billing';
+import { validateInvoicePayload } from '@/lib/invoice-validation';
 import { rateLimitRequest, rejectCrossOriginPost } from '@/lib/request-security';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import type { BillingProfile } from '@/lib/billing';
-import type { LineItem } from '@/types/invoice';
-
-type InvoicePayload = {
-  client_id?: string | null;
-  client_name?: string;
-  client_email?: string;
-  client_address?: string;
-  line_items?: Array<Partial<LineItem>>;
-  tax_rate?: number;
-  notes?: string;
-  invoice_date?: string;
-  due_date?: string;
-};
-
-const MAX_CLIENT_NAME_LENGTH = 140;
-const MAX_CLIENT_EMAIL_LENGTH = 254;
-const MAX_CLIENT_ADDRESS_LENGTH = 800;
-const MAX_NOTES_LENGTH = 1200;
-const MAX_LINE_ITEMS = 50;
-const MAX_LINE_ITEM_DESCRIPTION_LENGTH = 240;
-const MAX_QUANTITY = 100000;
-const MAX_RATE = 1000000;
-const MAX_LINE_AMOUNT = 10000000;
-
-function normalizeLineItems(input: InvoicePayload['line_items']): LineItem[] | null {
-  if (!Array.isArray(input)) return null;
-  if (input.length > MAX_LINE_ITEMS) return null;
-
-  const items = input
-    .map((item, index) => {
-      const description = String(item.description ?? '').trim();
-      const quantity = Number(item.quantity ?? 0);
-      const rate = Number(item.rate ?? 0);
-
-      if (!description) return null;
-      if (description.length > MAX_LINE_ITEM_DESCRIPTION_LENGTH) return null;
-      if (!Number.isFinite(quantity) || quantity < 0) return null;
-      if (!Number.isFinite(rate) || rate < 0) return null;
-      if (quantity > MAX_QUANTITY || rate > MAX_RATE) return null;
-
-      const amount = quantity * rate;
-      if (!Number.isFinite(amount) || amount > MAX_LINE_AMOUNT) return null;
-
-      return {
-        id: String(item.id ?? index + 1),
-        description,
-        quantity,
-        rate,
-        amount,
-      };
-    })
-    .filter((item): item is LineItem => Boolean(item));
-
-  return items.length > 0 ? items : null;
-}
-
-function isDateInput(value: unknown): value is string {
-  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
-}
-
-function isOversized(value: string, maxLength: number): boolean {
-  return value.length > maxLength;
-}
 
 export async function POST(request: NextRequest) {
   const originError = rejectCrossOriginPost(request);
@@ -87,33 +25,21 @@ export async function POST(request: NextRequest) {
   });
   if (rateLimitError) return rateLimitError;
 
-  let payload: InvoicePayload;
+  let payload: unknown;
 
   try {
-    payload = (await request.json()) as InvoicePayload;
+    payload = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid invoice payload' }, { status: 400 });
   }
 
-  const lineItems = normalizeLineItems(payload.line_items);
+  const validation = validateInvoicePayload(payload);
 
-  if (!lineItems) {
-    return NextResponse.json({ error: 'Add at least one valid line item.' }, { status: 400 });
+  if (!validation.ok) {
+    return NextResponse.json({ error: validation.error }, { status: 400 });
   }
 
-  const taxRate = Number(payload.tax_rate ?? 0);
-
-  if (!Number.isFinite(taxRate) || taxRate < 0 || taxRate > 100) {
-    return NextResponse.json({ error: 'Tax rate must be between 0 and 100.' }, { status: 400 });
-  }
-
-  if (!isDateInput(payload.invoice_date) || !isDateInput(payload.due_date)) {
-    return NextResponse.json({ error: 'Invoice date and due date are required.' }, { status: 400 });
-  }
-
-  if (payload.due_date < payload.invoice_date) {
-    return NextResponse.json({ error: 'Due date cannot be earlier than invoice date.' }, { status: 400 });
-  }
+  const validatedPayload = validation.value;
 
   const { data: profile, error: profileError } = await supabase
     .from('billing_profiles')
@@ -149,20 +75,10 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  let clientId = payload.client_id || null;
-  let clientName = String(payload.client_name ?? '').trim();
-  let clientEmail = String(payload.client_email ?? '').trim();
-  let clientAddress = String(payload.client_address ?? '').trim();
-  const notes = String(payload.notes ?? '').trim();
-
-  if (
-    isOversized(clientName, MAX_CLIENT_NAME_LENGTH) ||
-    isOversized(clientEmail, MAX_CLIENT_EMAIL_LENGTH) ||
-    isOversized(clientAddress, MAX_CLIENT_ADDRESS_LENGTH) ||
-    isOversized(notes, MAX_NOTES_LENGTH)
-  ) {
-    return NextResponse.json({ error: 'Invoice or client details are too long.' }, { status: 400 });
-  }
+  let clientId = validatedPayload.clientId;
+  let clientName = validatedPayload.clientName;
+  let clientEmail = validatedPayload.clientEmail;
+  let clientAddress = validatedPayload.clientAddress;
 
   if (clientId) {
     const { data: client, error: clientError } = await supabase
@@ -180,10 +96,6 @@ export async function POST(request: NextRequest) {
     clientEmail = client.email ?? '';
     clientAddress = client.address ?? '';
   } else {
-    if (!clientName) {
-      return NextResponse.json({ error: 'Client name is required.' }, { status: 400 });
-    }
-
     const { data: newClient, error: clientError } = await supabase
       .from('clients')
       .insert({
@@ -202,8 +114,8 @@ export async function POST(request: NextRequest) {
     clientId = newClient.id;
   }
 
-  const subtotal = lineItems.reduce((sum, item) => sum + item.amount, 0);
-  const taxAmount = subtotal * (taxRate / 100);
+  const subtotal = validatedPayload.lineItems.reduce((sum, item) => sum + item.amount, 0);
+  const taxAmount = subtotal * (validatedPayload.taxRate / 100);
   const total = subtotal + taxAmount;
 
   const { count: invoiceCount, error: invoiceCountError } = await supabase
@@ -226,15 +138,15 @@ export async function POST(request: NextRequest) {
       client_email: clientEmail,
       client_address: clientAddress,
       client_id: clientId,
-      line_items: lineItems,
+      line_items: validatedPayload.lineItems,
       subtotal,
-      tax_rate: taxRate,
+      tax_rate: validatedPayload.taxRate,
       tax_amount: taxAmount,
       total,
       status: 'draft',
-      notes,
-      invoice_date: payload.invoice_date,
-      due_date: payload.due_date,
+      notes: validatedPayload.notes,
+      invoice_date: validatedPayload.invoiceDate,
+      due_date: validatedPayload.dueDate,
     })
     .select('id,invoice_number')
     .single();

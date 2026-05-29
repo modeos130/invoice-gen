@@ -11,7 +11,7 @@
 | P0 | Stripe | Complete preview Stripe checkout/webhook/portal QA | Medium | High | High | Test subscription grants/removes Pro through webhook. |
 | P1 | Legal pages | Deploy `/terms`, `/privacy`, `/refunds` and add missing privacy/cookie/minors language | Medium | High | Medium | Legal pages reachable and founder-approved. |
 | P1 | Security | Add origin/CSRF checks and rate limiting | Medium | High | Medium | POST routes reject suspicious origins and abusive repeat calls. |
-| P1 | Unit tests | Expand Vitest coverage for invoice validation and API helpers | Medium | Medium | Low | Pure validation and helper logic covered without browser/database dependencies. |
+| P1 | Unit tests | Expand Vitest coverage to API route wrappers and Stripe webhook helpers | Medium | Medium | Low | More server logic covered without browser/database dependencies. |
 | P1 | QA | Add authenticated E2E and RLS tests | Medium | High | Medium | Auth, invoice, PDF, free limit, billing, and cross-user data isolation automated. |
 
 ## Should Fix Before Public Launch

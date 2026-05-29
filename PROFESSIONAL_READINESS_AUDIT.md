@@ -6,7 +6,7 @@ All file paths are under `/Users/booman/projects/invoice-gen` unless noted. `inv
 
 - Site name: I Hate Invoices
 - What the site does: Small-business invoice creation, client records, saved PDF export, manual payment-status tracking, and Free-to-Pro subscription billing.
-- Current estimated completion: 68% product implementation; 56.5/100 launch readiness.
+- Current estimated completion: 80% beta readiness; 55% production readiness.
 - Beta readiness score: 58/100
 - Production readiness score: 43/100
 - Biggest strength: Coherent lightweight MVP with real auth, client/invoice data, saved PDFs, and Stripe billing routes in local source.
@@ -85,9 +85,9 @@ See `STACK_INVENTORY.md`.
 | Performance | 3/5 | Needs Work | Static public route, font optimized | PDF lazy load, pagination, server data. |
 | SEO / Metadata / Social Sharing | 2.5/4 | Needs Work | Metadata/robots/sitemap added | Deploy and add richer OG asset/schema. |
 | Legal / Privacy / Compliance | 2/4 | Dangerous | Local pages exist | Production deploy and policy expansion. |
-| Testing Coverage | 1.3/4 | Needs Work | Vitest unit tests, smoke checks, readiness guard | Add authenticated E2E/API/RLS/Stripe tests. |
+| Testing Coverage | 1.7/4 | Needs Work | Vitest unit tests for billing/env/invoice/security guardrails, smoke checks, readiness guard | Add authenticated E2E/API/RLS/Stripe tests. |
 
-Current beta-readiness percentage: 58%. Current production-readiness percentage: 43%. Confidence: high for local code/build findings; medium for live Supabase/Stripe state because hosted database and live Stripe are not fully proven in this pass.
+Current beta-readiness percentage: 80%. Current production-readiness percentage: 55%. Confidence: high for local code/build/test findings; medium for live Supabase/Stripe state because hosted database and live Stripe are not fully proven in this pass.
 
 ## 8. Critical Blockers
 
@@ -96,7 +96,7 @@ Current beta-readiness percentage: 58%. Current production-readiness percentage:
 3. Production Stripe live Product/Price/webhook/portal not configured/proven.
 4. Supabase production migration state must be verified.
 5. Free invoice quota and invoice numbering are not atomic.
-6. No automated auth/billing/RLS/E2E tests; unit tests now cover only pure helpers and readiness guard.
+6. No automated auth/billing/RLS/E2E tests; unit tests now cover pure helper and guardrail logic only.
 7. Legal pages are not live and missing policy depth.
 8. No monitoring/error tracking/uptime alerts.
 9. No rate limiting or origin/CSRF checks on state-changing routes.
@@ -146,7 +146,7 @@ Public pages should perform well once deployed because the homepage is static an
 
 ## 17. Testing Findings
 
-Vitest unit tests now cover pure billing/env helpers and the static readiness guard. Smoke and readiness scripts cover public routes, protected redirects, selected unauthenticated API behavior, blocked stale copy, required files, and saved-only PDF export guardrails. Missing: authenticated browser E2E, API integration tests with mocked Supabase/Stripe, signed Stripe webhook fixtures, Supabase RLS/cross-user tests, accessibility tests, and visual regression tests. See `QA_TEST_PLAN.md`.
+Vitest unit tests now cover pure billing/env helpers, invoice validation, request-security helpers, and the static readiness guard. Smoke and readiness scripts cover public routes, protected redirects, selected unauthenticated API behavior, blocked stale copy, required files, security headers, and saved-only PDF export guardrails. Missing: authenticated browser E2E, API integration tests with mocked Supabase/Stripe, signed Stripe webhook fixtures, Supabase RLS/cross-user tests, accessibility tests, and visual regression tests. See `QA_TEST_PLAN.md`.
 
 ## 18. DevOps / Deployment Findings
 

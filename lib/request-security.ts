@@ -40,3 +40,8 @@ export function rateLimitRequest(
   current.count += 1;
   return null;
 }
+
+export function resetRateLimitBucketsForTest() {
+  if (process.env.NODE_ENV !== 'test') return;
+  buckets.clear();
+}
