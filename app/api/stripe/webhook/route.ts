@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { requireServerEnv } from '@/lib/server-env';
 import { createSupabaseAdminClient } from '@/lib/supabase-server';
-import { getStripe } from '@/lib/stripe';
+import { getProPriceId, getStripe } from '@/lib/stripe';
 import { processStripeWebhookEvent, type StripeWebhookAdminClient } from '@/lib/stripe-webhook';
 
 function describeServerError(error: unknown) {
@@ -47,7 +47,8 @@ export async function POST(request: NextRequest) {
     const result = await processStripeWebhookEvent(
       event,
       admin as unknown as StripeWebhookAdminClient,
-      stripe
+      stripe,
+      { expectedPriceId: getProPriceId() }
     );
     return NextResponse.json(result);
   } catch (error) {

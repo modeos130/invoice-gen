@@ -40,6 +40,7 @@ export type StripeWebhookResult = {
 
 type SyncSubscriptionOptions = {
   now?: () => Date;
+  expectedPriceId?: string | null;
 };
 
 export function subscriptionPeriodEnd(subscription: Stripe.Subscription): string | null {
@@ -50,6 +51,19 @@ export function subscriptionPeriodEnd(subscription: Stripe.Subscription): string
 export function stripeId(value: string | { id: string } | null | undefined): string | null {
   if (!value) return null;
   return typeof value === 'string' ? value : value.id;
+}
+
+export function subscriptionHasPrice(
+  subscription: Stripe.Subscription,
+  expectedPriceId?: string | null
+): boolean {
+  if (!expectedPriceId) return true;
+
+  return subscription.items.data.some((item) => {
+    const price = (item as { price?: string | { id?: string } | null }).price;
+    if (!price) return false;
+    return typeof price === 'string' ? price === expectedPriceId : price.id === expectedPriceId;
+  });
 }
 
 function isUniqueViolation(error: unknown): boolean {
@@ -102,8 +116,12 @@ export async function syncSubscription(
   admin: StripeWebhookAdminClient,
   options: SyncSubscriptionOptions = {}
 ) {
+  if (!subscriptionHasPrice(subscription, options.expectedPriceId)) {
+    return;
+  }
+
   const customerId = stripeId(subscription.customer);
-  let userId = subscription.metadata.user_id || null;
+  let userId = subscription.metadata.user_id || subscription.metadata.userId || null;
 
   if (!userId && customerId) {
     const { data } = await admin

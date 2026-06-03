@@ -3,6 +3,7 @@ import type Stripe from 'stripe';
 import {
   processStripeWebhookEvent,
   stripeId,
+  subscriptionHasPrice,
   subscriptionPeriodEnd,
   syncCheckoutSession,
   syncSubscription,
@@ -16,7 +17,7 @@ function fakeSubscription(overrides: Partial<Stripe.Subscription> = {}): Stripe.
     metadata: { user_id: 'user_test' },
     status: 'active',
     items: {
-      data: [{ current_period_end: 1_800_000_000 }],
+      data: [{ current_period_end: 1_800_000_000, price: { id: 'price_app' } }],
     },
     ...overrides,
   } as unknown as Stripe.Subscription;
@@ -124,6 +125,12 @@ describe('Stripe webhook helpers', () => {
     expect(stripeId(null)).toBeNull();
   });
 
+  it('matches subscriptions against the configured app price', () => {
+    expect(subscriptionHasPrice(fakeSubscription(), 'price_app')).toBe(true);
+    expect(subscriptionHasPrice(fakeSubscription(), 'price_other')).toBe(false);
+    expect(subscriptionHasPrice(fakeSubscription(), null)).toBe(true);
+  });
+
   it('returns the subscription item period end as an ISO string', () => {
     expect(subscriptionPeriodEnd(fakeSubscription())).toBe('2027-01-15T08:00:00.000Z');
     expect(
@@ -155,6 +162,14 @@ describe('Stripe webhook helpers', () => {
     });
   });
 
+  it('syncs an active subscription using camelCase metadata user id', async () => {
+    const { client, calls } = createAdmin();
+
+    await syncSubscription(fakeSubscription({ metadata: { userId: 'user_camel' } }), client);
+
+    expect(calls.upserts[0].payload.user_id).toBe('user_camel');
+  });
+
   it('falls back to customer lookup when subscription metadata has no user id', async () => {
     const { client, calls } = createAdmin({ lookupUserId: 'user_from_profile' });
 
@@ -182,6 +197,36 @@ describe('Stripe webhook helpers', () => {
     expect(calls.upserts[0].payload.status).toBe('canceled');
   });
 
+  it('ignores subscriptions for another Stripe product without touching billing profiles', async () => {
+    const { client, calls } = createAdmin();
+
+    const result = await processStripeWebhookEvent(
+      fakeEvent(
+        'customer.subscription.updated',
+        fakeSubscription({
+          metadata: {},
+          items: {
+            data: [{ current_period_end: 1_800_000_000, price: { id: 'price_130mode' } }],
+          } as unknown as Stripe.Subscription['items'],
+        }),
+        'evt_other_product'
+      ),
+      client,
+      { subscriptions: { retrieve: vi.fn() } },
+      { expectedPriceId: 'price_app' }
+    );
+
+    expect(result).toEqual({ received: true });
+    expect(calls.lookups).toHaveLength(0);
+    expect(calls.upserts).toHaveLength(0);
+    expect(calls.inserts).toEqual([
+      {
+        table: 'stripe_webhook_events',
+        payload: { id: 'evt_other_product', type: 'customer.subscription.updated' },
+      },
+    ]);
+  });
+
   it('fails closed when a subscription cannot be tied to a user', async () => {
     const { client } = createAdmin();
 
@@ -202,6 +247,30 @@ describe('Stripe webhook helpers', () => {
 
     expect(stripe.subscriptions.retrieve).toHaveBeenCalledWith('sub_test');
     expect(calls.upserts).toHaveLength(1);
+  });
+
+  it('acknowledges completed checkout sessions for another Stripe product', async () => {
+    const { client, calls } = createAdmin();
+    const stripe = {
+      subscriptions: {
+        retrieve: vi.fn(async () =>
+          fakeSubscription({
+            metadata: {},
+            items: {
+              data: [{ current_period_end: 1_800_000_000, price: { id: 'price_130mode' } }],
+            } as unknown as Stripe.Subscription['items'],
+          })
+        ),
+      },
+    };
+
+    await syncCheckoutSession(fakeCheckoutSession(), client, stripe, {
+      expectedPriceId: 'price_app',
+    });
+
+    expect(stripe.subscriptions.retrieve).toHaveBeenCalledWith('sub_test');
+    expect(calls.lookups).toHaveLength(0);
+    expect(calls.upserts).toHaveLength(0);
   });
 
   it('does not reprocess duplicate Stripe events', async () => {
